@@ -1,0 +1,19 @@
+{
+  "name": "honl/magento2-storeresolver",
+  "description": "",
+  "require": {
+    "php": "~7.0.0"
+  },
+  "type": "magento2-module",
+  "version": "1.0.0",
+  "license": [
+  ],
+  "autoload": {
+    "files": [
+      "registration.php"
+    ],
+    "psr-4": {
+      "Ho\\StoreResolver\\": "src/"
+    }
+  }
+}
