@@ -3,16 +3,15 @@
  * Copyright (c) 2017 H&O E-commerce specialisten B.V. (http://www.h-o.nl/)
  * See LICENSE.txt for license details.
  */
+
 namespace Ho\StoreResolver\Model;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Api\StoreCookieManagerInterface;
 use Magento\Store\Model\StoreIsInactiveException;
 
 class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
 {
-
     /**
      * Cache tag
      */
@@ -21,37 +20,37 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     /**
      * @var \Magento\Store\Api\StoreRepositoryInterface
      */
-    protected $storeRepository;
+    private $storeRepository;
 
     /**
      * @var StoreCookieManagerInterface
      */
-    protected $storeCookieManager;
+    private $storeCookieManager;
 
     /**
      * @var \Magento\Framework\Cache\FrontendInterface
      */
-    protected $cache;
+    private $cache;
 
     /**
      * @var \Magento\Store\Model\StoreResolver\ReaderList
      */
-    protected $readerList;
+    private $readerList;
 
     /**
      * @var string
      */
-    protected $runMode;
+    private $runMode;
 
     /**
      * @var string
      */
-    protected $scopeCode;
+    private $scopeCode;
 
     /**
      * @var \Magento\Framework\App\RequestInterface
      */
-    protected $request;
+    private $request;
 
     /**
      * @var \Magento\Store\Model\ResourceModel\Website\CollectionFactory
@@ -67,7 +66,6 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      * @var \Magento\Framework\UrlInterface
      */
     private $urlInterface;
-
 
     /**
      * StoreResolver constructor.
@@ -103,7 +101,6 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $this->urlInterface            = $urlInterface;
     }
 
-
     /**
      * {@inheritdoc}
      */
@@ -136,15 +133,14 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         return $store->getId();
     }
 
-
     /**
      * Get stores data
      *
      * @return array
      */
-    protected function getStoresData()
+    private function getStoresData()
     {
-        $cacheKey  = 'resolved_stores_' . md5($this->runMode . $this->scopeCode);
+        $cacheKey  = 'resolved_stores_' . $this->runMode .'_'. $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
         if ($cacheData) {
             $storesData = unserialize($cacheData);
@@ -155,29 +151,29 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         return $storesData;
     }
 
-
     /**
      * Read stores data. First element is allowed store ids, second is default store id
-     *
      */
-    protected function readStoresData()
+    private function readStoresData()
     {
         $reader = $this->readerList->getReader($this->runMode);
         return [$reader->getAllowedStoreIds($this->scopeCode), $reader->getDefaultStoreId($this->scopeCode)];
     }
 
-
     /**
-     * Automatically resolve the URL to a website
+     * Automatically resolve the URL to a website.
+     *
      * @return int
      */
-    protected function getAutoResolvedStore()
+    private function getAutoResolvedStore()
     {
         $currentUrl = $this->urlInterface->getCurrentUrl();
+
         $found = array_filter($this->getAutoResolveData(), function ($storeUrl) use ($currentUrl) {
-            //@todo this causes problems when the URL does not contain HTTPS. Solve that this doesn't matter.
-            return stripos($currentUrl, $storeUrl) === 0
-            || stripos(str_replace(['www.', 'http://'], ['', 'https://'], $currentUrl), $storeUrl) === 0;
+            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://'], '', $currentUrl), '/');
+            $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://'], '', $storeUrl), '/');
+
+            return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
         });
 
         if (count($found) == 1) {
@@ -187,14 +183,13 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         return false;
     }
 
-
     /**
      * Get a map of URL's to website mapping
      * @return int[]
      */
     public function getAutoResolveData()
     {
-        $cacheKey  = 'auto_resolved_stores_' . md5($this->runMode . $this->scopeCode);
+        $cacheKey  = 'auto_resolved_stores_' . $this->runMode .'_'. $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
         if ($cacheData) {
             $storesData = unserialize($cacheData);
@@ -205,12 +200,11 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         return $storesData;
     }
 
-
     /**
      * Load a map of URL's to website mapping
      * @return int[]
      */
-    protected function readAutoResolveData()
+    private function readAutoResolveData()
     {
         $configCollection = $this->configCollectionFactory->create();
         $configCollection->addFieldToFilter('path', 'web/unsecure/base_url');
@@ -229,7 +223,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      * @return \Magento\Store\Api\Data\StoreInterface
      * @throws NoSuchEntityException
      */
-    protected function getRequestedStoreByCode($storeCode)
+    private function getRequestedStoreByCode($storeCode)
     {
         try {
             $store = $this->storeRepository->getActiveStoreByCode($storeCode);
@@ -239,7 +233,6 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         return $store;
     }
 
-
     /**
      * Retrieve active store by code
      *
@@ -248,7 +241,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      * @return \Magento\Store\Api\Data\StoreInterface
      * @throws NoSuchEntityException
      */
-    protected function getDefaultStoreById($id)
+    private function getDefaultStoreById($id)
     {
         try {
             $store = $this->storeRepository->getActiveStoreById($id);
