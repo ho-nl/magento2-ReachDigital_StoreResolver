@@ -1,5 +1,8 @@
 {
-  "name": "honl/magento2-storeresolver",
+  "name": "reach-digital/magento2-storeresolver",
+  "replace": {
+    "honl/magento2-storeresolver": "self.version"
+  },
   "description": "",
   "require": {
     "php": "~7.0.0"
