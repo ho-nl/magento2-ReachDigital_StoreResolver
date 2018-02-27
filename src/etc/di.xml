@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2017 H&O E-commerce specialisten B.V. (http://www.h-o.nl/)
+  ~ Copyright © Reach Digital (https://www.reachdigital.io/)
   ~ See LICENSE.txt for license details.
   -->
+
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Magento\Store\Api\StoreResolverInterface" type="Ho\StoreResolver\Model\StoreResolver"/>
+
     <type name="Ho\StoreResolver\Model\StoreResolver">
         <arguments>
             <argument name="cache" xsi:type="object">Magento\Framework\App\Cache\Type\Config</argument>
         </arguments>
+    </type>
+
+    <type name="Magento\Framework\App\FrontController">
+        <plugin name="reachDigitalParacordFrontController" type="Ho\StoreResolver\Model\Plugin\AppFrontControllerPlugin"/>
+    </type>
+    <type name="ReachDigital\Polymer\Model\BowerContextFactory">
+        <plugin name="reachDigitalParacordBowerContextFactory" type="Ho\StoreResolver\Model\Plugin\ModelBowerContextFactoryPlugin"/>
     </type>
 </config>
