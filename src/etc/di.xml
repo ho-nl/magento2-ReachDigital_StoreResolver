@@ -12,11 +12,4 @@
             <argument name="cache" xsi:type="object">Magento\Framework\App\Cache\Type\Config</argument>
         </arguments>
     </type>
-
-    <type name="Magento\Framework\App\FrontController">
-        <plugin name="reachDigitalParacordFrontController" type="Ho\StoreResolver\Model\Plugin\AppFrontControllerPlugin"/>
-    </type>
-    <type name="ReachDigital\Polymer\Model\BowerContextFactory">
-        <plugin name="reachDigitalParacordBowerContextFactory" type="Ho\StoreResolver\Model\Plugin\ModelBowerContextFactoryPlugin"/>
-    </type>
 </config>

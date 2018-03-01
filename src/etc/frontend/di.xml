@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright © Reach Digital (https://www.reachdigital.io/)
+  ~ See LICENSE.txt for license details.
+  -->
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\App\FrontController">
+        <plugin name="reachDigitalParacordFrontController" type="Ho\StoreResolver\Model\Plugin\AppFrontControllerPlugin"/>
+    </type>
+    <type name="ReachDigital\Polymer\Model\BowerContextFactory">
+        <plugin name="reachDigitalParacordBowerContextFactory" type="Ho\StoreResolver\Model\Plugin\ModelBowerContextFactoryPlugin"/>
+    </type>
+</config>
