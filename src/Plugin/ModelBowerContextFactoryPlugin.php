@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-namespace Ho\StoreResolver\Model\Plugin;
+namespace Ho\StoreResolver\Plugin;
 
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\UrlInterface;

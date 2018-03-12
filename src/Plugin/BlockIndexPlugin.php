@@ -5,14 +5,12 @@
  */
 declare(strict_types=1);
 
-namespace Ho\StoreResolver\Model\Plugin;
+namespace Ho\StoreResolver\Plugin;
 
-use Magento\Framework\App\FrontController;
-use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
 
-class AppFrontControllerPlugin
+class BlockIndexPlugin
 {
     /** @var StoreManagerInterface $storeManager */
     private $storeManager;
@@ -26,25 +24,25 @@ class AppFrontControllerPlugin
     }
 
     /**
-     * @param FrontController  $subject
-     * @param RequestInterface $request
+     * @param \Magento\Swagger\Block\Index $subject
+     * @param string                       $result
      *
-     * @return array
+     * @return string
      */
-    public function beforeDispatch(FrontController $subject, RequestInterface $request): array
+    public function afterGetSchemaUrl(\Magento\Swagger\Block\Index $subject, string $result): string
     {
-        $pathParts = explode('/', ltrim($request->getPathInfo(), '/'), 2);
-        $storeCode = $pathParts[0];
+        $pathParts = explode('/', rtrim($subject->getBaseUrl(), '/'));
+        $storeCode = end($pathParts);
 
         try {
             $this->storeManager->getStore($storeCode);
         } catch (NoSuchEntityException $e) {
-            return [$request];
+            return $result;
         }
 
-        $pathInfo = '/'.($pathParts[1] ?? '');
-        $request->setPathInfo($pathInfo);
-
-        return [$request];
+        return rtrim($subject->getRequest()->getDistroBaseUrl(), '/')
+            . '/rest/' .
+            ($subject->getRequest()->getParam('store') ?: 'all')
+            . '/schema?services=all';
     }
 }
