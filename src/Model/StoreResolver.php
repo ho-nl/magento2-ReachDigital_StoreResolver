@@ -170,8 +170,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $currentUrl = $this->urlInterface->getCurrentUrl();
 
         $found = array_filter($this->getAutoResolveData(), function ($storeUrl) use ($currentUrl) {
-            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://'], '', $currentUrl), '/');
-            $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://'], '', $storeUrl), '/');
+            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
+            $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
 
             return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
         });
