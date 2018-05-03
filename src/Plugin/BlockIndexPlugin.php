@@ -42,7 +42,7 @@ class BlockIndexPlugin
 
         return rtrim($subject->getRequest()->getDistroBaseUrl(), '/')
             . '/rest/' .
-            ($subject->getRequest()->getParam('store') ?: 'all')
+            ($subject->getRequest()->getParam('store') ?: $storeCode)
             . '/schema?services=all';
     }
 }

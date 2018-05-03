@@ -5,13 +5,10 @@
   -->
 
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <type name="Magento\Framework\App\FrontController">
-        <plugin name="reachDigitalParacordFrontController" type="Ho\StoreResolver\Plugin\AppFrontControllerPlugin"/>
-    </type>
     <type name="ReachDigital\Polymer\Model\BowerContextFactory">
-        <plugin name="reachDigitalParacordBowerContextFactory" type="Ho\StoreResolver\Plugin\ModelBowerContextFactoryPlugin"/>
+        <plugin name="hoStoreResolverBowerContextFactory" type="Ho\StoreResolver\Plugin\ModelBowerContextFactoryPlugin"/>
     </type>
     <type name="Magento\Swagger\Block\Index">
-        <plugin name="reachDigitalParacordIndex" type="Ho\StoreResolver\Plugin\BlockIndexPlugin"/>
+        <plugin name="hoStoreResolverIndex" type="Ho\StoreResolver\Plugin\BlockIndexPlugin"/>
     </type>
 </config>

@@ -7,6 +7,10 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <preference for="Magento\Store\Api\StoreResolverInterface" type="Ho\StoreResolver\Model\StoreResolver"/>
 
+    <type name="Magento\Framework\App\AreaList">
+        <plugin name="hoStoreResolverAreaList" type="Ho\StoreResolver\Plugin\AppAreaListPlugin"/>
+    </type>
+
     <type name="Ho\StoreResolver\Model\StoreResolver">
         <arguments>
             <argument name="cache" xsi:type="object">Magento\Framework\App\Cache\Type\Config</argument>
