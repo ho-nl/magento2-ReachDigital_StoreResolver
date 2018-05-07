@@ -47,9 +47,11 @@ class AppAreaListPlugin
             return [$frontName];
         }
 
+        // Push store code out array.
         array_shift($pathParts);
-        $this->request->setPathInfo(implode('/', $pathParts));
 
-        return [reset($pathParts)];
+        $this->request->setPathInfo(implode('/', $pathParts) ?: '/');
+
+        return [reset($pathParts) ?: ''];
     }
 }
