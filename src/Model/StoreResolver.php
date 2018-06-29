@@ -68,6 +68,11 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     private $urlInterface;
 
     /**
+     * @var \Magento\Store\Api\GroupRepositoryInterface
+     */
+    private $groupRepository;
+
+    /**
      * StoreResolver constructor.
      *
      * @param \Magento\Store\Api\StoreRepositoryInterface                       $storeRepository
@@ -87,7 +92,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         \Magento\Store\Model\StoreResolver\ReaderList $readerList,
         \Magento\Store\Model\ResourceModel\Store\CollectionFactory $storeCollectionFactory,
         \Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory $configCollectionFactory,
-        \Magento\Framework\UrlInterface $urlInterface
+        \Magento\Framework\UrlInterface $urlInterface,
+        \Magento\Store\Api\GroupRepositoryInterface $groupRepository
     ) {
         $this->storeRepository         = $storeRepository;
         $this->storeCookieManager      = $storeCookieManager;
@@ -99,6 +105,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $this->storeCollectionFactory  = $storeCollectionFactory;
         $this->configCollectionFactory = $configCollectionFactory;
         $this->urlInterface            = $urlInterface;
+        $this->groupRepository         = $groupRepository;
     }
 
     /**
@@ -178,6 +185,11 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
 
         if (count($found) == 1) {
             return current(array_flip($found));
+        } elseif (count($found) > 1) {
+            // get the default store for this website because all it's stores have the same url
+            $store = $this->getDefaultStoreById(current(array_flip($found)));
+            $group = $this->groupRepository->get($store->getStoreGroupId());
+            return $group->getDefaultStoreId();
         }
 
         return false;
