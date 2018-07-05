@@ -73,6 +73,11 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     private $groupRepository;
 
     /**
+     * @var \Magento\Store\Api\WebsiteRepositoryInterface
+     */
+    private $websiteRepository;
+
+    /**
      * StoreResolver constructor.
      *
      * @param \Magento\Store\Api\StoreRepositoryInterface                       $storeRepository
@@ -93,7 +98,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         \Magento\Store\Model\ResourceModel\Store\CollectionFactory $storeCollectionFactory,
         \Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory $configCollectionFactory,
         \Magento\Framework\UrlInterface $urlInterface,
-        \Magento\Store\Api\GroupRepositoryInterface $groupRepository
+        \Magento\Store\Api\GroupRepositoryInterface $groupRepository,
+        \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository
     ) {
         $this->storeRepository         = $storeRepository;
         $this->storeCookieManager      = $storeCookieManager;
@@ -106,6 +112,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $this->configCollectionFactory = $configCollectionFactory;
         $this->urlInterface            = $urlInterface;
         $this->groupRepository         = $groupRepository;
+        $this->websiteRepository       = $websiteRepository;
     }
 
     /**
@@ -114,6 +121,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     public function getCurrentStoreId()
     {
         list($stores, $defaultStoreId) = $this->getStoresData();
+
+        // get ALL stores with their default store
         
         $storeCode = $this->request->getParam(self::PARAM_NAME, $this->storeCookieManager->getStoreCodeFromCookie());
         if (is_array($storeCode)) {
@@ -164,7 +173,15 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     private function readStoresData()
     {
         $reader = $this->readerList->getReader($this->runMode);
-        return [$reader->getAllowedStoreIds($this->scopeCode), $reader->getDefaultStoreId($this->scopeCode)];
+        $allowedStores = [];
+        foreach ($this->websiteRepository->getList() as $website) {
+            $allowedStoreIds = $reader->getAllowedStoreIds($website->getCode());
+            foreach ($allowedStoreIds as $allowedStoreId) {
+                $allowedStores[] = $allowedStoreId;
+            }
+        }
+
+        return [$allowedStores, $reader->getDefaultStoreId($this->scopeCode)];
     }
 
     /**
