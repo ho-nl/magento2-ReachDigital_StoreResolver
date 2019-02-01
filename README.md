@@ -1,4 +1,4 @@
-# H&O Store Resolver
+# Reach Digital Store Resolver
 
 [Changelog](CHANGELOG.md)
 

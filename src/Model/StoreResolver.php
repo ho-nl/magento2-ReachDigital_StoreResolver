@@ -185,26 +185,82 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     }
 
     /**
+     * Get stores data
+     *
+     * @return array
+     */
+    private function getWebsitesData()
+    {
+        $cacheKey  = 'resolved_websites_' . $this->runMode .'_'. $this->scopeCode;
+        $cacheData = $this->cache->load($cacheKey);
+        if ($cacheData) {
+            $websitesData = unserialize($cacheData);
+        } else {
+            $websitesData = $this->readWebsitesData();
+            $this->cache->save(serialize($websitesData), $cacheKey, [self::CACHE_TAG]);
+        }
+        return $websitesData;
+    }
+
+    /**
+     * Read websites data. First element is allowed website id, second is default store id
+     */
+    private function readWebsitesData()
+    {
+        $reader = $this->readerList->getReader($this->runMode);
+        $defaultStores = [];
+        foreach ($this->websiteRepository->getList() as $website) {
+            $defaultStores[$website->getId()] = $this->groupRepository->get($website->getDefaultGroupId())->getDefaultStoreId();
+        }
+
+        return $defaultStores;
+    }
+
+    /**
      * Automatically resolve the URL to a website.
      *
      * @return int
      */
     private function getAutoResolvedStore()
     {
+        $websites = $this->getWebsitesData();
+        $scope = 'store';
         $currentUrl = $this->urlInterface->getCurrentUrl();
 
-        $found = array_filter($this->getAutoResolveData(), function ($storeUrl) use ($currentUrl) {
+        $found = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
             $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
             $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
 
             return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
         });
 
+        // see if url is defined at website scope
+        if (count($found) == 0) {
+            $scope = 'website';
+            $found = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
+                $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
+                $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
+
+                return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
+            });
+        }
+
         if (count($found) == 1) {
-            return current(array_flip($found));
+            if ($scope == 'store') {
+                return current(array_flip($found));
+            } else {
+                return $websites[current(array_flip($found))];
+            }
         } elseif (count($found) > 1) {
+            if ($scope == 'store') {
+                $storeId = current(array_flip($found));
+            } else {
+                // should never happen (2 websites with the same url) but could be a wrong configuration. Get the first one.
+                $storeId = $websites[current(array_flip($found))];
+            }
+
             // get the default store for this website because all it's stores have the same url
-            $store = $this->getDefaultStoreById(current(array_flip($found)));
+            $store = $this->getDefaultStoreById($storeId);
             $group = $this->groupRepository->get($store->getStoreGroupId());
             return $group->getDefaultStoreId();
         }
@@ -216,14 +272,14 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      * Get a map of URL's to website mapping
      * @return int[]
      */
-    public function getAutoResolveData()
+    public function getAutoResolveData($scope = 'store')
     {
-        $cacheKey  = 'auto_resolved_stores_' . $this->runMode .'_'. $this->scopeCode;
+        $cacheKey  = 'auto_resolved_stores_' . $scope . '_' . $this->runMode .'_'. $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
         if ($cacheData) {
             $storesData = unserialize($cacheData);
         } else {
-            $storesData = $this->readAutoResolveData();
+            $storesData = $this->readAutoResolveData($scope);
             $this->cache->save(serialize($storesData), $cacheKey, [self::CACHE_TAG]);
         }
         return $storesData;
@@ -233,11 +289,16 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      * Load a map of URL's to website mapping
      * @return int[]
      */
-    private function readAutoResolveData()
+    private function readAutoResolveData($scope = 'store')
     {
         $configCollection = $this->configCollectionFactory->create();
         $configCollection->addFieldToFilter('path', 'web/unsecure/base_url');
-        $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_STORES);
+        if ($scope == 'store') {
+            $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_STORES);
+        } else {
+            $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES);
+        }
+
         $configCollection->getSelect()->reset('columns')->columns(['scope_id', 'value']);
 
         $storeToUrl = $configCollection->getConnection()->fetchPairs($configCollection->getSelect());
