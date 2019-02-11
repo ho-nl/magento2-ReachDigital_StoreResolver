@@ -11,4 +11,7 @@
     <type name="Magento\Swagger\Block\Index">
         <plugin name="hoStoreResolverIndex" type="Ho\StoreResolver\Plugin\BlockIndexPlugin"/>
     </type>
+    <type name="Magento\Framework\App\Response\RedirectInterface">
+        <plugin name="hoStoreResolverRedirectInterface" type="Ho\StoreResolver\Plugin\AppResponseRedirectInterfacePlugin"/>
+    </type>
 </config>
