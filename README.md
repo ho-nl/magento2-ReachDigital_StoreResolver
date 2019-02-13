@@ -7,7 +7,7 @@ You are running a multi store with a specific catalog per domain.
 ## Installation
 ```BASH
 composer config repositories.honl/magento2-storeresolver vcs git@github.com:ho-nl/magento2-Ho_StoreResolver.git
-composer require honl/magento2-storeresolver
+composer require reachdigital/magento2-storeresolver
 ```
 
 ## Automatic mapping from Domain > Store View
