@@ -3,10 +3,12 @@
  * Copyright © Reach Digital (https://www.reachdigital.io/)
  * See LICENSE.txt for license details.
  */
+
 declare(strict_types=1);
 
 namespace Ho\StoreResolver\Plugin;
 
+use Ho\StoreResolver\Model\StoreUrls;
 use Magento\Framework\App\AreaList;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -21,13 +23,23 @@ class AppAreaListPlugin
     private $storeManager;
 
     /**
+     * @var StoreUrls
+     */
+    private $storeUrls;
+
+    /**
      * @param Http                  $request
      * @param StoreManagerInterface $storeManager
+     * @param StoreUrls             $storeUrls
      */
-    public function __construct(Http $request, StoreManagerInterface $storeManager)
-    {
+    public function __construct(
+        Http $request,
+        StoreManagerInterface $storeManager,
+        StoreUrls $storeUrls
+    ) {
         $this->request = $request;
         $this->storeManager = $storeManager;
+        $this->storeUrls = $storeUrls;
     }
 
     /**
@@ -38,8 +50,7 @@ class AppAreaListPlugin
      */
     public function beforeGetCodeByFrontName(AreaList $subject, $frontName): array
     {
-        $pathParts = explode('/', trim($this->request->getPathInfo(), '/'));
-        $storeCode = reset($pathParts);
+        $storeCode = $this->storeUrls->getStoreCodeByRequest($this->request);
 
         try {
             $this->storeManager->getStore($storeCode);
@@ -47,7 +58,8 @@ class AppAreaListPlugin
             return [$frontName];
         }
 
-        // Push store code out array.
+        // Push custom path out array
+        $pathParts = explode('/', trim($this->request->getPathInfo(), '/'));
         array_shift($pathParts);
 
         $this->request->setPathInfo(implode('/', $pathParts) ?: '/');

@@ -3,10 +3,12 @@
  * Copyright © Reach Digital (https://www.reachdigital.io/)
  * See LICENSE.txt for license details.
  */
+
 declare(strict_types=1);
 
 namespace Ho\StoreResolver\Plugin;
 
+use Ho\StoreResolver\Model\StoreUrls;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
 
@@ -16,11 +18,20 @@ class BlockIndexPlugin
     private $storeManager;
 
     /**
-     * @param StoreManagerInterface $storeManager
+     * @var StoreUrls
      */
-    public function __construct(StoreManagerInterface $storeManager)
-    {
+    private $storeUrls;
+
+    /**
+     * @param StoreManagerInterface $storeManager
+     * @param StoreUrls             $storeUrls
+     */
+    public function __construct(
+        StoreManagerInterface $storeManager,
+        StoreUrls $storeUrls
+    ) {
         $this->storeManager = $storeManager;
+        $this->storeUrls = $storeUrls;
     }
 
     /**
@@ -31,10 +42,8 @@ class BlockIndexPlugin
      */
     public function afterGetSchemaUrl(\Magento\Swagger\Block\Index $subject, string $result): string
     {
-        $pathParts = explode('/', rtrim($subject->getBaseUrl(), '/'));
-        $storeCode = end($pathParts);
-
         try {
+            $storeCode = $this->storeUrls->getStoreCodeByBaseUrl($subject->getBaseUrl());
             $this->storeManager->getStore($storeCode);
         } catch (NoSuchEntityException $e) {
             return $result;

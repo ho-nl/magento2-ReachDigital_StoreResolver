@@ -3,31 +3,43 @@
  * Copyright © Reach Digital (https://www.reachdigital.io/)
  * See LICENSE.txt for license details.
  */
+
 declare(strict_types=1);
 
 namespace Ho\StoreResolver\Plugin;
 
-use Magento\Framework\App\RequestInterface;
+use Ho\StoreResolver\Model\StoreUrls;
+use Magento\Framework\App\Request\Http;
 use Magento\Framework\App\Response\RedirectInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
 
 class AppResponseRedirectInterfacePlugin
 {
-    /** @var RequestInterface $request */
+    /** @var Http $request */
     private $request;
 
     /** @var StoreManagerInterface $storeManager */
     private $storeManager;
 
     /**
-     * @param RequestInterface      $request
-     * @param StoreManagerInterface $storeManager
+     * @var StoreUrls
      */
-    public function __construct(RequestInterface $request, StoreManagerInterface $storeManager)
-    {
+    private $storeUrls;
+
+    /**
+     * @param Http                  $request
+     * @param StoreManagerInterface $storeManager
+     * @param StoreUrls             $storeUrls
+     */
+    public function __construct(
+        Http $request,
+        StoreManagerInterface $storeManager,
+        StoreUrls $storeUrls
+    ) {
         $this->request = $request;
         $this->storeManager = $storeManager;
+        $this->storeUrls = $storeUrls;
     }
 
     /**
@@ -47,11 +59,15 @@ class AppResponseRedirectInterfacePlugin
             return $url;
         }
 
-        $targetBaseUrl = $this->storeManager->getStore()->getBaseUrl();
-        $pathParts = explode('/', trim(str_replace($targetBaseUrl, '', $url), '/'));
+        $baseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $url), '/');
+        $uri = trim(str_replace($this->request->getHttpHost(), '', $baseUrl), '/');
 
-        if ($pathParts[0] === $storeCode) {
-            return $targetBaseUrl.$pathParts[1];
+        $storeCode = $this->storeUrls->getStoreCodeByHostAndPath($this->request->getHttpHost(), $uri);
+
+        if ($storeCode) {
+            $targetBaseUrl = $this->storeManager->getStore()->getBaseUrl();
+
+            return $targetBaseUrl;
         }
 
         return $url;

@@ -28,6 +28,10 @@ Make sure to explicitly set `Base URL for Static View Files` and `Base URL for U
 
 > It's not possible to have CMS pages with the same identifier as a store code!
 
+> Important note:  
+Base URLs which have no custom string set after the TLD, must be configured at website level, not on store level,
+else matching on URL can result in multiple stores, see `\Ho\StoreResolver\Model\StoreResolver::getAutoResolvedStore`
+
 ## Store scope definition
 
 | Product                      | Default | Website | Store Group | Store View |
