@@ -53,14 +53,19 @@ class AppAreaListPlugin
         $storeCode = $this->storeUrls->getStoreCodeByRequest($this->request);
 
         try {
-            $this->storeManager->getStore($storeCode);
+            /** @var \Magento\Store\Model\Store $store */
+            $store = $this->storeManager->getStore($storeCode);
         } catch (NoSuchEntityException $e) {
             return [$frontName];
         }
 
-        // Push custom path out array
         $pathParts = explode('/', trim($this->request->getPathInfo(), '/'));
-        array_shift($pathParts);
+
+        $baseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $store->getBaseUrl()), '/');
+        if (count(explode('/', $baseUrl)) > 1) {
+            // Push custom path out array
+            array_shift($pathParts);
+        }
 
         $this->request->setPathInfo(implode('/', $pathParts) ?: '/');
 

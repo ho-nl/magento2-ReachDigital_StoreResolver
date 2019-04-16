@@ -67,7 +67,15 @@ class StoreUrls
         $url = rtrim(str_replace(['www.', 'http://', 'https://'], '', $url), '/');
         $baseUrls = $this->getBaseUrls();
 
-        return array_search($url, $baseUrls);
+        $storeCode = array_search($url, $baseUrls);
+
+        if (!$storeCode) {
+            // Check if there is a matching URL without custom path after TLD
+            $baseUrl = explode('/', $url)[0];
+            $storeCode = array_search($baseUrl, $baseUrls);
+        }
+
+        return $storeCode;
     }
 
     /**
