@@ -10,6 +10,9 @@
     <type name="Magento\Framework\App\AreaList">
         <plugin name="hoStoreResolverAreaList" type="Ho\StoreResolver\Plugin\AppAreaListPlugin"/>
     </type>
+    <type name="Magento\Framework\Data\Helper\PostHelper">
+        <plugin name="reach" type="Ho\StoreResolver\Plugin\PostHelperPlugin"/>
+    </type>
 
     <type name="Ho\StoreResolver\Model\StoreResolver">
         <arguments>
