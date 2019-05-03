@@ -54,6 +54,12 @@ class AppResponseRedirectInterfacePlugin
     {
         try {
             $storeCode = $this->request->getParam('___from_store');
+
+            if ($storeCode === null) {
+                // No need to redirect to other store
+                return $url;
+            }
+
             $this->storeManager->getStore($storeCode);
         } catch (NoSuchEntityException $e) {
             return $url;
