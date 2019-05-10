@@ -8,7 +8,6 @@ declare(strict_types=1);
 
 namespace Ho\StoreResolver\Plugin;
 
-use Ho\StoreResolver\Model\StoreUrls;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\App\Response\RedirectInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -23,30 +22,20 @@ class AppResponseRedirectInterfacePlugin
     private $storeManager;
 
     /**
-     * @var StoreUrls
-     */
-    private $storeUrls;
-
-    /**
      * @param Http                  $request
      * @param StoreManagerInterface $storeManager
-     * @param StoreUrls             $storeUrls
      */
     public function __construct(
         Http $request,
-        StoreManagerInterface $storeManager,
-        StoreUrls $storeUrls
+        StoreManagerInterface $storeManager
     ) {
         $this->request = $request;
         $this->storeManager = $storeManager;
-        $this->storeUrls = $storeUrls;
     }
 
     /**
      * @param RedirectInterface $redirect
      * @param string            $url
-     *
-     * @throws NoSuchEntityException
      *
      * @return string
      */
@@ -61,19 +50,10 @@ class AppResponseRedirectInterfacePlugin
             }
 
             $this->storeManager->getStore($storeCode);
+
+            $url = str_replace($storeCode.'/', '', $url);
         } catch (NoSuchEntityException $e) {
             return $url;
-        }
-
-        $baseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $url), '/');
-        $uri = trim(str_replace($this->request->getHttpHost(), '', $baseUrl), '/');
-
-        $storeCode = $this->storeUrls->getStoreCodeByHostAndPath($this->request->getHttpHost(), $uri);
-
-        if ($storeCode) {
-            $targetBaseUrl = $this->storeManager->getStore()->getBaseUrl();
-
-            return $targetBaseUrl;
         }
 
         return $url;

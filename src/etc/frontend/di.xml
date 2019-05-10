@@ -11,4 +11,7 @@
     <type name="Magento\Framework\App\Response\RedirectInterface">
         <plugin name="hoStoreResolverRedirectInterface" type="Ho\StoreResolver\Plugin\AppResponseRedirectInterfacePlugin"/>
     </type>
+    <type name="Magento\UrlRewrite\Model\StoreSwitcher\RewriteUrl">
+        <plugin name="hoStoreResolverRewriteUrl" type="Ho\StoreResolver\Plugin\ModelStoreSwitcherRewriteUrl"/>
+    </type>
 </config>

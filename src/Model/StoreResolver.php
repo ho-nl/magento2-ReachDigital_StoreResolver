@@ -6,8 +6,14 @@
 
 namespace Ho\StoreResolver\Model;
 
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\UrlInterface;
+use Magento\Store\Api\Data\StoreInterface;
+use Magento\Store\Api\GroupRepositoryInterface;
 use Magento\Store\Api\StoreCookieManagerInterface;
+use Magento\Store\Api\StoreRepositoryInterface;
+use Magento\Store\Api\WebsiteRepositoryInterface;
 use Magento\Store\Model\StoreIsInactiveException;
 
 class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
@@ -17,89 +23,61 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      */
     const CACHE_TAG = 'store_relations';
 
-    /**
-     * @var \Magento\Store\Api\StoreRepositoryInterface
-     */
+    /** @var StoreRepositoryInterface $storeRepository */
     private $storeRepository;
 
-    /**
-     * @var StoreCookieManagerInterface
-     */
+    /** @var StoreCookieManagerInterface $storeCookieManager */
     private $storeCookieManager;
 
-    /**
-     * @var \Magento\Framework\Cache\FrontendInterface
-     */
+    /** @var \Magento\Framework\Cache\FrontendInterface $cache */
     private $cache;
 
-    /**
-     * @var \Magento\Store\Model\StoreResolver\ReaderList
-     */
+    /** @var \Magento\Store\Model\StoreResolver\ReaderList $readerList */
     private $readerList;
 
-    /**
-     * @var string
-     */
+    /** @var string $runMode */
     private $runMode;
 
-    /**
-     * @var string
-     */
-    private $scopeCode;
+    /** @var null $scopeCode */
+    private $scopeCode = null;
 
-    /**
-     * @var \Magento\Framework\App\RequestInterface
-     */
+    /** @var RequestInterface $request */
     private $request;
 
-    /**
-     * @var \Magento\Store\Model\ResourceModel\Website\CollectionFactory
-     */
-    private $storeCollectionFactory;
-
-    /**
-     * @var \Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory
-     */
+    /** @var \Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory $configCollectionFactory */
     private $configCollectionFactory;
 
     /**
-     * @var \Magento\Framework\UrlInterface
-     */
+     * @var UrlInterface $urlInterface */
     private $urlInterface;
 
-    /**
-     * @var \Magento\Store\Api\GroupRepositoryInterface
-     */
+    /** @var GroupRepositoryInterface $groupRepository */
     private $groupRepository;
 
-    /**
-     * @var \Magento\Store\Api\WebsiteRepositoryInterface
-     */
+    /** @var WebsiteRepositoryInterface $websiteRepository */
     private $websiteRepository;
 
     /**
-     * StoreResolver constructor.
-     *
-     * @param \Magento\Store\Api\StoreRepositoryInterface                       $storeRepository
+     * @param StoreRepositoryInterface                                          $storeRepository
      * @param StoreCookieManagerInterface                                       $storeCookieManager
-     * @param \Magento\Framework\App\RequestInterface                           $request
+     * @param RequestInterface                                                  $request
      * @param \Magento\Framework\Cache\FrontendInterface                        $cache
      * @param \Magento\Store\Model\StoreResolver\ReaderList                     $readerList
-     * @param \Magento\Store\Model\ResourceModel\Store\CollectionFactory      $storeCollectionFactory
      * @param \Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory $configCollectionFactory
-     * @param \Magento\Framework\UrlInterface                                   $urlInterface
+     * @param UrlInterface                                                      $urlInterface
+     * @param GroupRepositoryInterface                                          $groupRepository
+     * @param WebsiteRepositoryInterface                                        $websiteRepository
      */
     public function __construct(
-        \Magento\Store\Api\StoreRepositoryInterface $storeRepository,
+        StoreRepositoryInterface $storeRepository,
         StoreCookieManagerInterface $storeCookieManager,
-        \Magento\Framework\App\RequestInterface $request,
+        RequestInterface $request,
         \Magento\Framework\Cache\FrontendInterface $cache,
         \Magento\Store\Model\StoreResolver\ReaderList $readerList,
-        \Magento\Store\Model\ResourceModel\Store\CollectionFactory $storeCollectionFactory,
         \Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory $configCollectionFactory,
-        \Magento\Framework\UrlInterface $urlInterface,
-        \Magento\Store\Api\GroupRepositoryInterface $groupRepository,
-        \Magento\Store\Api\WebsiteRepositoryInterface $websiteRepository
+        UrlInterface $urlInterface,
+        GroupRepositoryInterface $groupRepository,
+        WebsiteRepositoryInterface $websiteRepository
     ) {
         $this->storeRepository         = $storeRepository;
         $this->storeCookieManager      = $storeCookieManager;
@@ -107,8 +85,6 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $this->cache                   = $cache;
         $this->readerList              = $readerList;
         $this->runMode                 = \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE;
-        $this->scopeCode               = null;
-        $this->storeCollectionFactory  = $storeCollectionFactory;
         $this->configCollectionFactory = $configCollectionFactory;
         $this->urlInterface            = $urlInterface;
         $this->groupRepository         = $groupRepository;
@@ -120,24 +96,26 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      */
     public function getCurrentStoreId()
     {
-        list($stores, $defaultStoreId) = $this->getStoresData();
+        [$stores, $defaultStoreId] = $this->getStoresData();
 
         // get ALL stores with their default store
         
         $storeCode = $this->request->getParam(self::PARAM_NAME, $this->storeCookieManager->getStoreCodeFromCookie());
-        if (is_array($storeCode)) {
-            if (!isset($storeCode['_data']['code'])) {
+        if (\is_array($storeCode)) {
+            if (! isset($storeCode['_data']['code'])) {
                 throw new \InvalidArgumentException(__('Invalid store parameter.'));
             }
             $storeCode = $storeCode['_data']['code'];
         }
+
         if ($storeCode) {
             try {
                 $store = $this->getRequestedStoreByCode($storeCode);
             } catch (NoSuchEntityException $e) {
                 $store = $this->getDefaultStoreById($defaultStoreId);
             }
-            if (!in_array($store->getId(), $stores)) {
+
+            if (! \in_array($store->getId(), $stores, false)) {
                 $store = $this->getDefaultStoreById($defaultStoreId);
             }
         } else {
@@ -146,6 +124,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             }
             $store = $this->getDefaultStoreById($defaultStoreId);
         }
+
         return $store->getId();
     }
 
@@ -154,7 +133,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      *
      * @return array
      */
-    private function getStoresData()
+    private function getStoresData(): array
     {
         $cacheKey  = 'resolved_stores_' . $this->runMode .'_'. $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
@@ -164,13 +143,14 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             $storesData = $this->readStoresData();
             $this->cache->save(serialize($storesData), $cacheKey, [self::CACHE_TAG]);
         }
+
         return $storesData;
     }
 
     /**
      * Read stores data. First element is allowed store ids, second is default store id
      */
-    private function readStoresData()
+    private function readStoresData(): array
     {
         $reader = $this->readerList->getReader($this->runMode);
         $allowedStores = [];
@@ -189,7 +169,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      *
      * @return array
      */
-    private function getWebsitesData()
+    private function getWebsitesData(): array
     {
         $cacheKey  = 'resolved_websites_' . $this->runMode .'_'. $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
@@ -199,15 +179,15 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             $websitesData = $this->readWebsitesData();
             $this->cache->save(serialize($websitesData), $cacheKey, [self::CACHE_TAG]);
         }
+
         return $websitesData;
     }
 
     /**
      * Read websites data. First element is allowed website id, second is default store id
      */
-    private function readWebsitesData()
+    private function readWebsitesData(): array
     {
-        $reader = $this->readerList->getReader($this->runMode);
         $defaultStores = [];
         foreach ($this->websiteRepository->getList() as $website) {
             $defaultStores[$website->getId()] = $this->groupRepository->get($website->getDefaultGroupId())->getDefaultStoreId();
@@ -219,7 +199,9 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     /**
      * Automatically resolve the URL to a website.
      *
-     * @return int
+     * @throws NoSuchEntityException
+     *
+     * @return bool|int
      */
     private function getAutoResolvedStore()
     {
@@ -235,7 +217,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         });
 
         // see if url is defined at website scope
-        if (count($found) == 0) {
+        if (count($found) === 0) {
             $scope = 'website';
             $found = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
                 $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
@@ -245,23 +227,27 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             });
         }
 
-        if (count($found) == 1) {
-            if ($scope == 'store') {
+        if (count($found) === 1) {
+            if ($scope === 'store') {
                 return current(array_flip($found));
-            } else {
-                return $websites[current(array_flip($found))];
             }
-        } elseif (count($found) > 1) {
-            if ($scope == 'store') {
+
+            return $websites[current(array_flip($found))];
+        }
+
+        if (count($found) > 1) {
+            if ($scope === 'store') {
                 $storeId = current(array_flip($found));
             } else {
-                // should never happen (2 websites with the same url) but could be a wrong configuration. Get the first one.
+                // Should never happen (2 websites with the same url) but could be a wrong configuration.
+                // Get the first one.
                 $storeId = $websites[current(array_flip($found))];
             }
 
             // get the default store for this website because all it's stores have the same url
             $store = $this->getDefaultStoreById($storeId);
             $group = $this->groupRepository->get($store->getStoreGroupId());
+
             return $group->getDefaultStoreId();
         }
 
@@ -270,9 +256,12 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
 
     /**
      * Get a map of URL's to website mapping
+     *
+     * @param string $scope
+     *
      * @return int[]
      */
-    public function getAutoResolveData($scope = 'store')
+    public function getAutoResolveData($scope = 'store'): array
     {
         $cacheKey  = 'auto_resolved_stores_' . $scope . '_' . $this->runMode .'_'. $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
@@ -282,18 +271,22 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             $storesData = $this->readAutoResolveData($scope);
             $this->cache->save(serialize($storesData), $cacheKey, [self::CACHE_TAG]);
         }
+
         return $storesData;
     }
 
     /**
      * Load a map of URL's to website mapping
+     *
+     * @param string $scope
+     *
      * @return int[]
      */
-    private function readAutoResolveData($scope = 'store')
+    private function readAutoResolveData($scope = 'store'): array
     {
         $configCollection = $this->configCollectionFactory->create();
         $configCollection->addFieldToFilter('path', 'web/unsecure/base_url');
-        if ($scope == 'store') {
+        if ($scope === 'store') {
             $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_STORES);
         } else {
             $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES);
@@ -301,8 +294,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
 
         $configCollection->getSelect()->reset('columns')->columns(['scope_id', 'value']);
 
-        $storeToUrl = $configCollection->getConnection()->fetchPairs($configCollection->getSelect());
-        return $storeToUrl;
+        return $configCollection->getConnection()->fetchPairs($configCollection->getSelect());
     }
 
     /**
@@ -310,16 +302,18 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      *
      * @param string $storeCode
      *
-     * @return \Magento\Store\Api\Data\StoreInterface
      * @throws NoSuchEntityException
+     *
+     * @return StoreInterface
      */
-    private function getRequestedStoreByCode($storeCode)
+    private function getRequestedStoreByCode($storeCode): StoreInterface
     {
         try {
             $store = $this->storeRepository->getActiveStoreByCode($storeCode);
         } catch (StoreIsInactiveException $e) {
             throw new NoSuchEntityException(__('Requested store is inactive'));
         }
+
         return $store;
     }
 
@@ -328,16 +322,18 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      *
      * @param int $id
      *
-     * @return \Magento\Store\Api\Data\StoreInterface
      * @throws NoSuchEntityException
+     *
+     * @return StoreInterface
      */
-    private function getDefaultStoreById($id)
+    private function getDefaultStoreById($id): StoreInterface
     {
         try {
             $store = $this->storeRepository->getActiveStoreById($id);
         } catch (StoreIsInactiveException $e) {
             throw new NoSuchEntityException(__('Default store is inactive'));
         }
+
         return $store;
     }
 }
