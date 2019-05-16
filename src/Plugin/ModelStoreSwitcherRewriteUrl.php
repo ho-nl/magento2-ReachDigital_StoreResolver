@@ -42,7 +42,12 @@ class ModelStoreSwitcherRewriteUrl
     ): string {
         $fromStoreCode = $this->request->getParam('___from_store');
         $targetStoreCode = $this->request->getParam('___store');
-        $redirectUrl = str_replace([$fromStoreCode.'/', $targetStoreCode.'/'], '', $redirectUrl);
+
+        // Remove store code in redirect url for correct rewrite search
+        $baseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $targetStore->getBaseUrl()), '/');
+        if (substr_count($baseUrl, '/') + 1 > 1) {
+            $redirectUrl = str_replace([$fromStoreCode.'/', $targetStoreCode.'/'], '', $redirectUrl);
+        }
 
         $targetUrl = $proceed($fromStore, $targetStore, $redirectUrl);
 
