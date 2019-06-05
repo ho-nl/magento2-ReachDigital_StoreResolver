@@ -39,20 +39,26 @@ class ModelStoreSwitcherRewriteUrl
         StoreInterface $fromStore,
         StoreInterface $targetStore,
         string $redirectUrl
-    ): string {
-        $fromStoreCode = $this->request->getParam('___from_store');
-        $targetStoreCode = $this->request->getParam('___store');
-
+    ): string
+    {
         // Remove store code in redirect url for correct rewrite search
-        $baseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $targetStore->getBaseUrl()), '/');
-        if (substr_count($baseUrl, '/') + 1 > 1) {
-            $redirectUrl = str_replace([$fromStoreCode.'/', $targetStoreCode.'/'], '', $redirectUrl);
-        }
+        $redirectUrl = $this->stripBaseUrlEnd($targetStore->getBaseUrl(), $redirectUrl);
+        $redirectUrl = $this->stripBaseUrlEnd($fromStore->getBaseUrl(), $redirectUrl);
 
         $targetUrl = $proceed($fromStore, $targetStore, $redirectUrl);
-
-        return $targetUrl.$targetStoreCode.'/' === $targetStore->getBaseUrl()
+        return $targetUrl === $this->stripBaseUrlEnd($targetStore->getBaseUrl(), $targetStore->getBaseUrl())
             ? $targetStore->getBaseUrl()
             : $targetUrl;
+    }
+
+    private function stripBaseUrlEnd($baseUrl, $urlToStrip)
+    {
+        $strippedBaseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $baseUrl), '/');
+        if (substr_count($strippedBaseUrl, '/') > 0) {
+            $urlEnd = substr($strippedBaseUrl, strpos($strippedBaseUrl, '/') + 1) . '/';
+            $baseUrlStart = str_replace($urlEnd, '', $baseUrl);
+            $urlToStrip = str_replace($baseUrl, $baseUrlStart, $urlToStrip);
+        }
+        return $urlToStrip;
     }
 }
