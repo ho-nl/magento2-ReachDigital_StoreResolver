@@ -19,4 +19,8 @@
             <argument name="cache" xsi:type="object">Magento\Framework\App\Cache\Type\Config</argument>
         </arguments>
     </type>
+
+    <type name="Amasty\ShopbySeo\Helper\Data">
+        <plugin name="hoStoreResolverAmastyShopbySeoCompatibility" type="Ho\StoreResolver\Plugin\FixSeoUrlParsing"/>
+    </type>
 </config>

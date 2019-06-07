@@ -42,6 +42,8 @@ class AppAreaListPlugin
         $this->storeUrls = $storeUrls;
     }
 
+    private static $modifiedOriginalPathInfo = false;
+
     /**
      * @param AreaList $subject
      * @param string   $frontName
@@ -68,7 +70,13 @@ class AppAreaListPlugin
         }
 
         $this->request->setPathInfo(implode('/', $pathParts) ?: '/');
+        self::$modifiedOriginalPathInfo = implode('/', $pathParts) ?: '/';
 
         return [reset($pathParts) ?: ''];
+    }
+
+    public static function getModifiedOriginalPathInfo()
+    {
+        return self::$modifiedOriginalPathInfo;
     }
 }
