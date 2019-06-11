@@ -7,23 +7,11 @@ declare(strict_types=1);
 
 namespace Ho\StoreResolver\Plugin;
 
-use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\UrlRewrite\Model\StoreSwitcher\RewriteUrl;
 
 class ModelStoreSwitcherRewriteUrl
 {
-    /** @var HttpRequest $request */
-    private $request;
-
-    /**
-     * @param HttpRequest $request
-     */
-    public function __construct(HttpRequest $request)
-    {
-        $this->request = $request;
-    }
-
     /**
      * @param RewriteUrl     $subject
      * @param callable       $proceed
@@ -39,8 +27,7 @@ class ModelStoreSwitcherRewriteUrl
         StoreInterface $fromStore,
         StoreInterface $targetStore,
         string $redirectUrl
-    ): string
-    {
+    ): string {
         // Remove store code in redirect url for correct rewrite search
         $redirectUrl = $this->stripBaseUrlEnd($targetStore->getBaseUrl(), $redirectUrl);
         $redirectUrl = $this->stripBaseUrlEnd($fromStore->getBaseUrl(), $redirectUrl);
