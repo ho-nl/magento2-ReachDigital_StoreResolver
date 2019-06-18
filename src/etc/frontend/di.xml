@@ -14,4 +14,7 @@
     <type name="Magento\UrlRewrite\Model\StoreSwitcher\RewriteUrl">
         <plugin name="hoStoreResolverRewriteUrl" type="Ho\StoreResolver\Plugin\ModelStoreSwitcherRewriteUrl"/>
     </type>
+    <type name="Magento\Store\Model\Store">
+        <plugin name="hoStoreResolverStore" type="Ho\StoreResolver\Plugin\ModelStorePlugin"/>
+    </type>
 </config>
