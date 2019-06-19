@@ -1,40 +1,21 @@
 <?php
-declare(strict_types=1);
 /**
  * Copyright © Reach Digital (https://www.reachdigital.io/)
  * See LICENSE.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Ho\StoreResolver\Plugin;
 
-
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManager;
 use Magento\UrlRewrite\Model\UrlFinderInterface;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
 
 class FixSeoUrlParsing
 {
-    /**
-     * @var UrlFinderInterface
-     */
-    private $urlFinder;
-
-    /**
-     * @var StoreManager
-     */
-    private $storeManager;
-
-    public function __construct(
-        UrlFinderInterface $urlFinder,
-        StoreManager $storeManager
-    )
-    {
-        $this->urlFinder = $urlFinder;
-        $this->storeManager = $storeManager;
-    }
-
-    private $skipRequestIdentifiers = [
+    private const SKIP_REQUEST_IDENTIFIERS = [
         'catalog/category/',
         'catalog/product/',
         'cms/page/',
@@ -44,19 +25,40 @@ class FixSeoUrlParsing
         'catalogsearch'
     ];
 
+    /** @var UrlFinderInterface $urlFinder */
+    private $urlFinder;
+
+    /** @var StoreManager $storeManager */
+    private $storeManager;
+
+    /**
+     * @param UrlFinderInterface $urlFinder
+     * @param StoreManager       $storeManager
+     */
+    public function __construct(UrlFinderInterface $urlFinder, StoreManager $storeManager)
+    {
+        $this->urlFinder = $urlFinder;
+        $this->storeManager = $storeManager;
+    }
+
     /**
      * Obtain modified URL from \Ho\StoreResolver\Plugin\AppAreaListPlugin for correct handling of SEO URLs
      *
      * @param                  $subject
      * @param \Closure         $proceed
      * @param RequestInterface $request
-     * @param                  $allowEmptyModuleName
+     * @param bool             $allowEmptyModuleName
+     *
+     * @throws NoSuchEntityException
      *
      * @return bool
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
-    public function aroundIsAllowedRequest($subject, \Closure $proceed, RequestInterface $request, $allowEmptyModuleName)
-    {
+    public function aroundIsAllowedRequest(
+        $subject,
+        \Closure $proceed,
+        RequestInterface $request,
+        $allowEmptyModuleName = false
+    ) {
         if (!$allowEmptyModuleName && !$request->getModuleName()) {
             return false;
         }
@@ -67,7 +69,7 @@ class FixSeoUrlParsing
             $identifier = ltrim($request->getOriginalPathInfo(), '/');
         }
         if (!empty($identifier)) {
-            foreach ($this->skipRequestIdentifiers as $skipRequestIdentifier) {
+            foreach (self::SKIP_REQUEST_IDENTIFIERS as $skipRequestIdentifier) {
                 if (strpos($identifier, $skipRequestIdentifier) === 0) {
                     return false;
                 }
@@ -85,6 +87,5 @@ class FixSeoUrlParsing
         }
 
         return false;
-
     }
 }
