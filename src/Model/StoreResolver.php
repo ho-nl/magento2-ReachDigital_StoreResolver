@@ -317,6 +317,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             } else {
                 // Should never happen (2 websites with the same url) but could be a wrong configuration.
                 // Get the first one.
+                // @fixme Maybe throw an exception instead of trying to make sense of senseless configurations
                 $storeId = $websites[current(array_flip($found))];
             }
             // get the default store for this website because all it's stores have the same url
