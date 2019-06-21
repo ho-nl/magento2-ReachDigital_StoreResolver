@@ -93,6 +93,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
 
     /**
      * {@inheritdoc}
+     * @throws NoSuchEntityException
      */
     public function getCurrentStoreId()
     {
@@ -119,7 +120,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
                 $store = $this->getDefaultStoreById($defaultStoreId);
             }
         } else {
-            if ($resolvedStoreId = $this->getAutoResolvedStore()) {
+            $currentUrl = $this->urlInterface->getCurrentUrl();
+            if ($resolvedStoreId = $this->getStoreForUrl($currentUrl)) {
                 $defaultStoreId = $resolvedStoreId;
             }
             $store = $this->getDefaultStoreById($defaultStoreId);
@@ -194,64 +196,6 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         }
 
         return $defaultStores;
-    }
-
-    /**
-     * Automatically resolve the URL to a website.
-     *
-     * @throws NoSuchEntityException
-     *
-     * @return bool|int
-     */
-    private function getAutoResolvedStore()
-    {
-        $websites = $this->getWebsitesData();
-        $scope = 'store';
-        $currentUrl = $this->urlInterface->getCurrentUrl();
-
-        $found = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
-            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
-            $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
-
-            return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
-        });
-
-        // see if url is defined at website scope
-        if (count($found) === 0) {
-            $scope = 'website';
-            $found = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
-                $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
-                $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
-
-                return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
-            });
-        }
-
-        if (count($found) === 1) {
-            if ($scope === 'store') {
-                return current(array_flip($found));
-            }
-
-            return $websites[current(array_flip($found))];
-        }
-
-        if (count($found) > 1) {
-            if ($scope === 'store') {
-                $storeId = current(array_flip($found));
-            } else {
-                // Should never happen (2 websites with the same url) but could be a wrong configuration.
-                // Get the first one.
-                $storeId = $websites[current(array_flip($found))];
-            }
-
-            // get the default store for this website because all it's stores have the same url
-            $store = $this->getDefaultStoreById($storeId);
-            $group = $this->groupRepository->get($store->getStoreGroupId());
-
-            return $group->getDefaultStoreId();
-        }
-
-        return false;
     }
 
     /**
@@ -335,5 +279,51 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         }
 
         return $store;
+    }
+
+    /**
+     * @param string $currentUrl
+     *
+     * @return bool|int|mixed
+     * @throws NoSuchEntityException
+     */
+    public function getStoreForUrl(string $currentUrl)
+    {
+        $websites = $this->getWebsitesData();
+        $scope    = 'store';
+        $found    = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
+            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
+            $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
+            return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
+        });
+        // see if url is defined at website scope
+        if (count($found) === 0) {
+            $scope = 'website';
+            $found = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
+                $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
+                $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
+                return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
+            });
+        }
+        if (count($found) === 1) {
+            if ($scope === 'store') {
+                return current(array_flip($found));
+            }
+            return $websites[current(array_flip($found))];
+        }
+        if (count($found) > 1) {
+            if ($scope === 'store') {
+                $storeId = current(array_flip($found));
+            } else {
+                // Should never happen (2 websites with the same url) but could be a wrong configuration.
+                // Get the first one.
+                $storeId = $websites[current(array_flip($found))];
+            }
+            // get the default store for this website because all it's stores have the same url
+            $store = $this->getDefaultStoreById($storeId);
+            $group = $this->groupRepository->get($store->getStoreGroupId());
+            return $group->getDefaultStoreId();
+        }
+        return false;
     }
 }
