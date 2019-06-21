@@ -282,9 +282,11 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     }
 
     /**
+     * Look up store associated with given URL, and return its ID.
+     *
      * @param string $currentUrl
      *
-     * @return bool|int|mixed
+     * @return bool|int|mixed store ID
      * @throws NoSuchEntityException
      */
     public function getStoreForUrl(string $currentUrl)
