@@ -45,6 +45,8 @@ class AppAreaListPlugin
     private static $modifiedOriginalPathInfo = false;
 
     /**
+     * @fixme This plugin may no longer be needed with the TrimBaseUrlFromPathInfo plugin
+     *
      * @param AreaList $subject
      * @param string   $frontName
      *
