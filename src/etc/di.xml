@@ -15,6 +15,10 @@
         <plugin name="reach" type="Ho\StoreResolver\Plugin\PostHelperPlugin"/>
     </type>
 
+    <type name="Magento\Store\App\Request\PathInfoProcessor">
+        <plugin name="reachDigitalTrimBaseUrlFromPathInfo" type="Ho\StoreResolver\Plugin\TrimBaseUrlFromPathInfo"/>
+    </type>
+
     <type name="Ho\StoreResolver\Model\StoreResolver">
         <arguments>
             <argument name="cache" xsi:type="object">Magento\Framework\App\Cache\Type\Config</argument>
