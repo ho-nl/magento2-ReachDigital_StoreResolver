@@ -49,3 +49,10 @@ else matching on URL can result in multiple stores, see `\Ho\StoreResolver\Model
 | Root category configuration  |         |         | ✔           |            |
 | Orders                       | ✔       |         |             | ✔          |
 | Customers                    | ✔       | ✔       |             |            |
+
+
+## Known issues
+
+### Resolving URLs to stores
+Store resolving may fail if configured secure/unsecure URLs differ, see `\Ho\StoreResolver\Model\StoreUrls::getBaseUrls`,
+which only uses the unsecure base URL but should probably check the right one depending on `Request::isSecure()`
