@@ -17,4 +17,7 @@
     <type name="Magento\Store\Model\Store">
         <plugin name="hoStoreResolverStore" type="Ho\StoreResolver\Plugin\ModelStorePlugin"/>
     </type>
+    <type name="Magento\Store\Model\BaseUrlChecker">
+        <plugin name="hoStoreResolverStore" type="Ho\StoreResolver\Plugin\DisableBaseUrlCheckerForRobots"/>
+    </type>
 </config>

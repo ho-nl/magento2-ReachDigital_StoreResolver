@@ -293,7 +293,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     {
         $websites = $this->getWebsitesData();
         $scope    = 'store';
-        $found    = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
+        $found    = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
             $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
             $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
             return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
@@ -301,7 +301,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         // see if url is defined at website scope
         if (count($found) === 0) {
             $scope = 'website';
-            $found = array_filter($this->getAutoResolveData($scope), function ($storeUrl) use ($currentUrl) {
+            $found = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
                 $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
                 $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
                 return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
@@ -326,6 +326,20 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             $store = $this->getDefaultStoreById($storeId);
             $group = $this->groupRepository->get($store->getStoreGroupId());
             return $group->getDefaultStoreId();
+        }
+        if (count($found) === 0 && parse_url($currentUrl, PHP_URL_PATH) === '/robots.txt') {
+
+            // Handle robots.txt special case. For setups where stores have a path component in the base URL, try to map
+            // by host only.
+            $storeUrls = $this->getAutoResolveData('store');
+            asort($storeUrls);
+            $found = array_filter($storeUrls, static function ($storeUrl) use ($currentUrl) {
+                return parse_url($storeUrl, PHP_URL_SCHEME) === parse_url($currentUrl, PHP_URL_SCHEME) &&
+                       parse_url($storeUrl, PHP_URL_HOST) === parse_url($currentUrl, PHP_URL_HOST);
+            });
+            if (count($found) > 0) {
+                return current(array_flip($found));
+            }
         }
         return false;
     }
