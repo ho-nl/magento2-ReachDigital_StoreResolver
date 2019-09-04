@@ -12,23 +12,15 @@ use Magento\Framework\App\Request\Http;
 
 class TrimBaseUrlFromPathInfo
 {
-    /**
-     * @var StoreUrls
-     */
+    /** @var StoreUrls $storeUrls */
     private $storeUrls;
 
     /**
-     * @var \Magento\Framework\App\Config\ReinitableConfigInterface
+     * @param StoreUrls\Proxy $storeUrls
      */
-    private $config;
-
-    public function __construct(
-        StoreUrls\Proxy $storeUrls,
-        \Magento\Framework\App\Config\ReinitableConfigInterface $config
-    )
+    public function __construct(StoreUrls\Proxy $storeUrls)
     {
         $this->storeUrls = $storeUrls;
-        $this->config = $config;
     }
 
     /**
@@ -48,8 +40,8 @@ class TrimBaseUrlFromPathInfo
         \Magento\Store\App\Request\PathInfoProcessor $subject,
         string $resultPathInfo,
         \Magento\Framework\App\RequestInterface $request,
-        $pathInfo) : string
-    {
+        $pathInfo
+    ) : string {
         if (!$request instanceof Http) {
             return $resultPathInfo;
         }
