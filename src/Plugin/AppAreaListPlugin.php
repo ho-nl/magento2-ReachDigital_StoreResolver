@@ -63,7 +63,7 @@ class AppAreaListPlugin
             return [$frontName];
         }
 
-        $pathParts = explode('/', trim($this->request->getPathInfo(), '/'));
+        $pathParts = explode('/', ltrim($this->request->getPathInfo(), '/'));
 
         $baseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $store->getBaseUrl()), '/');
         if (count(explode('/', $baseUrl)) > 1) {
