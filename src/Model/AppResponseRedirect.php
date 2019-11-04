@@ -20,6 +20,7 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
      * @param \Magento\Framework\Session\SidResolverInterface    $sidResolver
      * @param \Magento\Framework\UrlInterface                    $urlBuilder
      * @param StoreResolver                                      $storeResolver
+     * @param \Zend\Uri\Uri|null                                 $uri
      * @param bool                                               $canUseSessionIdInParam
      */
     public function __construct(
@@ -30,6 +31,7 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
         \Magento\Framework\Session\SidResolverInterface $sidResolver,
         \Magento\Framework\UrlInterface $urlBuilder,
         \Ho\StoreResolver\Model\StoreResolver $storeResolver,
+        \Zend\Uri\Uri $uri = null,
         $canUseSessionIdInParam = true
     ) {
         parent::__construct(
@@ -39,6 +41,7 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
             $session,
             $sidResolver,
             $urlBuilder,
+            $uri,
             $canUseSessionIdInParam
         );
 
@@ -51,7 +54,7 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
      * @return bool
      * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
-    protected function _isUrlInternal($url)
+    protected function _isUrlInternal($url) // phpcs:ignore
     {
         // Determine if URL is within current store
         if (strpos($url, 'http') !== false) {
