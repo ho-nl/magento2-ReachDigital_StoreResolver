@@ -57,7 +57,7 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
     protected function _isUrlInternal($url) // phpcs:ignore
     {
         // Determine if URL is within current store
-        if (strpos($url, 'http') !== false) {
+        if ($url !== null && strpos($url, 'http') !== false) {
             $urlStoreId = $this->storeResolver->getStoreForUrl($url);
             $curStoreId = (int) $this->_storeManager->getStore()->getId();
 
