@@ -358,11 +358,19 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
         });
         if (count($found) === 1) {
+            // The url matches the default base url, however, we now need to know which of the stores uses the dafault URL.
+            // This is the store that doesn't have a base url set at store scope and also doesn't have a base url set at website scope.
             $connection = $this->resource->getConnection();
             $defaultStoreSelect = $connection->select();
             $defaultStoreSelect->from($connection->getTableName('store'), 'store_id')
-                ->joinLeft($connection->getTableName('core_config_data'), 'path = "web/unsecure/base_url" AND scope = "stores" AND scope_id = store_id', [])
-                ->where('value IS NULL')
+                ->joinLeft(['store_urls' => $connection->getTableName('core_config_data')],
+                    'store_urls.path = "web/unsecure/base_url" AND store_urls.scope = "stores" AND store_urls.scope_id = store_id',
+                    [])
+                ->joinLeft(['website_urls' => $connection->getTableName('core_config_data')],
+                    'website_urls.path = "web/unsecure/base_url" AND website_urls.scope = "websites" AND website_urls.scope_id = website_id',
+                    [])
+                ->where('store_urls.value IS NULL')
+                ->where('website_urls.value IS NULL')
                 ->where('store_id > 0');
             $defaultStores = $connection->fetchAll($defaultStoreSelect);
             if (count($defaultStores) === 1) {
