@@ -6,7 +6,9 @@
 
 namespace Ho\StoreResolver\Model;
 
+use http\Exception\InvalidArgumentException;
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\UrlInterface;
 use Magento\Store\Api\Data\StoreInterface;
@@ -58,6 +60,11 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     private $websiteRepository;
 
     /**
+     * @var ResourceConnection
+     */
+    private $resource;
+
+    /**
      * @param StoreRepositoryInterface                                          $storeRepository
      * @param StoreCookieManagerInterface                                       $storeCookieManager
      * @param RequestInterface                                                  $request
@@ -77,7 +84,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         \Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory $configCollectionFactory,
         UrlInterface $urlInterface,
         GroupRepositoryInterface $groupRepository,
-        WebsiteRepositoryInterface $websiteRepository
+        WebsiteRepositoryInterface $websiteRepository,
+        ResourceConnection $resource
     ) {
         $this->storeRepository         = $storeRepository;
         $this->storeCookieManager      = $storeCookieManager;
@@ -89,6 +97,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $this->urlInterface            = $urlInterface;
         $this->groupRepository         = $groupRepository;
         $this->websiteRepository       = $websiteRepository;
+        $this->resource = $resource;
     }
 
     /**
@@ -232,13 +241,42 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $configCollection->addFieldToFilter('path', 'web/unsecure/base_url');
         if ($scope === 'store') {
             $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_STORES);
-        } else {
+        } else if ($scope === 'website') {
             $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES);
+        } else if ($scope === 'default') {
+            $configCollection->addFieldToFilter('scope', 'default');
+        } else {
+            throw new \InvalidArgumentException('Config scope has to be one of "store", "website" or "default". Provided scope was: ' . $scope);
         }
 
         $configCollection->getSelect()->reset('columns')->columns(['scope_id', 'value']);
 
-        return $configCollection->getConnection()->fetchPairs($configCollection->getSelect());
+        $result = $configCollection->getConnection()->fetchPairs($configCollection->getSelect());
+
+        if ($scope === 'default'
+            && count($result) > 0) {
+
+            // The url matches the default base url, however, we now need to know which of the stores uses the dafault URL.
+            // This is the store that doesn't have a base url set at either store scope or website scope.
+            $connection = $this->resource->getConnection();
+            $defaultStoreSelect = $connection->select();
+            $defaultStoreSelect->from($connection->getTableName('store'), 'store_id')
+                ->joinLeft(['store_urls' => $connection->getTableName('core_config_data')],
+                    'store_urls.path = "web/unsecure/base_url" AND store_urls.scope = "stores" AND store_urls.scope_id = store_id',
+                    [])
+                ->joinLeft(['website_urls' => $connection->getTableName('core_config_data')],
+                    'website_urls.path = "web/unsecure/base_url" AND website_urls.scope = "websites" AND website_urls.scope_id = website_id',
+                    [])
+                ->where('store_urls.value IS NULL')
+                ->where('website_urls.value IS NULL')
+                ->where('store_id > 0');
+            $defaultStores = $connection->fetchAll($defaultStoreSelect);
+            if (count($defaultStores) === 1) {
+                $result = [(int)reset($defaultStores) => reset($result)];
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -307,11 +345,21 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
                 return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
             });
         }
+        // see if url is defined at default scope
+        if (count($found) === 0) {
+            $scope = 'default';
+            $found = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
+                $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
+                $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
+                return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
+            });
+        }
         if (count($found) === 1) {
-            if ($scope === 'store') {
-                return current(array_flip($found));
+            if ($scope === 'website') {
+                // The id that is used as a key in $found is a website id, so look up the corresponding store id.
+                return $websites[current(array_flip($found))];
             }
-            return $websites[current(array_flip($found))];
+            return current(array_flip($found));
         }
         if (count($found) > 1) {
             if ($scope === 'store') {
