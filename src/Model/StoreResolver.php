@@ -7,6 +7,7 @@
 namespace Ho\StoreResolver\Model;
 
 use Magento\Framework\App\RequestInterface;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\UrlInterface;
 use Magento\Store\Api\Data\StoreInterface;
@@ -58,6 +59,11 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     private $websiteRepository;
 
     /**
+     * @var ResourceConnection
+     */
+    private $resource;
+
+    /**
      * @param StoreRepositoryInterface                                          $storeRepository
      * @param StoreCookieManagerInterface                                       $storeCookieManager
      * @param RequestInterface                                                  $request
@@ -77,7 +83,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         \Magento\Config\Model\ResourceModel\Config\Data\CollectionFactory $configCollectionFactory,
         UrlInterface $urlInterface,
         GroupRepositoryInterface $groupRepository,
-        WebsiteRepositoryInterface $websiteRepository
+        WebsiteRepositoryInterface $websiteRepository,
+        ResourceConnection $resource
     ) {
         $this->storeRepository         = $storeRepository;
         $this->storeCookieManager      = $storeCookieManager;
@@ -89,6 +96,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $this->urlInterface            = $urlInterface;
         $this->groupRepository         = $groupRepository;
         $this->websiteRepository       = $websiteRepository;
+        $this->resource = $resource;
     }
 
     /**
@@ -232,8 +240,10 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $configCollection->addFieldToFilter('path', 'web/unsecure/base_url');
         if ($scope === 'store') {
             $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_STORES);
-        } else {
+        } else if ($scope === 'website') {
             $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES);
+        } else  {
+            $configCollection->addFieldToFilter('scope', 'default');
         }
 
         $configCollection->getSelect()->reset('columns')->columns(['scope_id', 'value']);
@@ -339,6 +349,24 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             });
             if (count($found) > 0) {
                 return current(array_flip($found));
+            }
+        }
+        $scope = 'default';
+        $found = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
+            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
+            $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
+            return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
+        });
+        if (count($found) === 1) {
+            $connection = $this->resource->getConnection();
+            $defaultStoreSelect = $connection->select();
+            $defaultStoreSelect->from($connection->getTableName('store'), 'store_id')
+                ->joinLeft($connection->getTableName('core_config_data'), 'path = "web/unsecure/base_url" AND scope = "stores" AND scope_id = store_id', [])
+                ->where('value IS NULL')
+                ->where('store_id > 0');
+            $defaultStores = $connection->fetchAll($defaultStoreSelect);
+            if (count($defaultStores) === 1) {
+                return (int)current($defaultStores)['store_id'];
             }
         }
         return false;
