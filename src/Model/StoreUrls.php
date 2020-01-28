@@ -41,6 +41,9 @@ class StoreUrls
         /** @var \Zend\Uri\Http $uri */
         $uri = $request->getUri();
         $host = $uri->getHost();
+        if (!$host) {
+            $host = '';
+        }
 
         return $this->getStoreCodeByHostAndPath($host, $request->getPathInfo());
     }
