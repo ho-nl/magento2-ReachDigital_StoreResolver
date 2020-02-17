@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace Ho\StoreResolver\Model;
 
+use Magento\Framework\App\ObjectManager;
+
 class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
 {
     /** @var StoreResolver $storeResolver */
@@ -34,16 +36,31 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
         \Zend\Uri\Uri $uri = null,
         $canUseSessionIdInParam = true
     ) {
-        parent::__construct(
-            $request,
-            $storeManager,
-            $urlCoder,
-            $session,
-            $sidResolver,
-            $urlBuilder,
-            $uri,
-            $canUseSessionIdInParam
-        );
+        $version = ObjectManager::getInstance()->get(\Magento\Framework\App\ProductMetadataInterface::class)->getVersion();
+
+        if ($version < '2.3.3') {
+            parent::__construct(
+                $request,
+                $storeManager,
+                $urlCoder,
+                $session,
+                $sidResolver,
+                $urlBuilder,
+                $canUseSessionIdInParam
+            );
+        }
+        else {
+            parent::__construct(
+                $request,
+                $storeManager,
+                $urlCoder,
+                $session,
+                $sidResolver,
+                $urlBuilder,
+                $uri,
+                $canUseSessionIdInParam
+            );
+        }
 
         $this->storeResolver = $storeResolver;
     }
