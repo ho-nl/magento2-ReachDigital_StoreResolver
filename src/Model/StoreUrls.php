@@ -8,28 +8,43 @@ declare(strict_types=1);
 
 namespace Ho\StoreResolver\Model;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Request\Http;
+use Magento\Framework\App\ResourceConnection;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreFactory;
 use Magento\Store\Model\StoreManagerInterface;
 
 class StoreUrls
 {
+    /**
+     * @var null|string[]
+     */
+    private $baseUrls = null;
+
     /**
      * @var StoreManagerInterface
      */
     private $storeManager;
 
     /**
-     * @var ScopeConfigInterface
+     * @var ResourceConnection
      */
-    private $scopeConfig;
+    private $resource;
+
+    /**
+     * @var StoreFactory
+     */
+    private $storeFactory;
 
     public function __construct(
         StoreManagerInterface $storeManager,
-        ScopeConfigInterface $scopeConfig
+        StoreFactory $storeFactory,
+        ResourceConnection $resource
     ) {
         $this->storeManager = $storeManager;
-        $this->scopeConfig = $scopeConfig;
+        $this->storeFactory = $storeFactory;
+        $this->resource = $resource;
     }
 
     /**
@@ -86,17 +101,55 @@ class StoreUrls
      */
     public function getBaseUrls()
     {
-        $baseUrls = [];
-        foreach ($this->storeManager->getStores() as $store) {
-            $baseUrl = $this->scopeConfig->getValue(
-                \Magento\Store\Model\Store::XML_PATH_UNSECURE_BASE_URL,
-                \Magento\Store\Model\ScopeInterface::SCOPE_STORES,
-                $store->getId());
+        $connection = $this->resource->getConnection();
 
-            $baseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $baseUrl), '/');
-            $baseUrls[$store->getCode()] = $baseUrl;
+        if (is_null($this->baseUrls)) {
+            $baseUrls = [];
+
+            $select = $select = $connection->select()
+                ->from($connection->getTableName('core_config_data'))
+                ->reset(\Zend_Db_Select::COLUMNS)
+                ->columns('value')
+                ->where('path = ?', Store::XML_PATH_UNSECURE_BASE_URL)
+                ->where('scope = ?', 'default')
+                ->where('scope_id = ?', 0);
+            $defaultBaseUrl = $connection->fetchOne($select);
+
+            foreach ($this->storeManager->getWebsites() as $website) {
+                $storeCollection = $this->storeFactory
+                    ->create()
+                    ->getCollection()
+                    ->addWebsiteFilter($website->getId());
+
+                $select = $connection->select()
+                    ->from($connection->getTableName('core_config_data'))
+                    ->reset(\Zend_Db_Select::COLUMNS)
+                    ->columns('value')
+                    ->where('path = ?', Store::XML_PATH_UNSECURE_BASE_URL)
+                    ->where('scope = ?', ScopeInterface::SCOPE_WEBSITES)
+                    ->where('scope_id = ?', $website->getId());
+                $websiteBaseUrl = $connection->fetchOne($select) ?: $defaultBaseUrl;
+
+                foreach ($storeCollection as $store) {
+                    /** @var Store $store */
+                    $select = $connection->select()
+                        ->from($connection->getTableName('core_config_data'))
+                        ->reset(\Zend_Db_Select::COLUMNS)
+                        ->columns('value')
+                        ->where('path = ?', Store::XML_PATH_UNSECURE_BASE_URL)
+                        ->where('scope = ?', ScopeInterface::SCOPE_STORES)
+                        ->where('scope_id = ?', $store->getStoreId());
+
+                    $storeBaseUrl = $connection->fetchOne($select);
+
+                    $baseUrl = $storeBaseUrl ?: $websiteBaseUrl;
+                    $baseUrls[$store->getCode()] = rtrim(str_replace(['www.', 'http://', 'https://'], '', $baseUrl), '/');
+                }
+            }
+
+            $this->baseUrls = $baseUrls;
         }
 
-        return $baseUrls;
+        return $this->baseUrls;
     }
 }
