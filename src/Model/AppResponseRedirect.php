@@ -35,45 +35,18 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
         \Ho\StoreResolver\Model\StoreResolver $storeResolver,
         \Zend\Uri\Uri $uri = null,
         $canUseSessionIdInParam = true
-    ) {
-        $version = ObjectManager::getInstance()->get(\Magento\Framework\App\ProductMetadataInterface::class)->getVersion();
-
-        if (false) {
-            // setup:di:compile doesn't understand if statements so has problems with the version checks.
-            // Here is a minimal constructor that is always correct to trick setup:di:compile into compiling.
-            parent::__construct(
-                $request,
-                $storeManager,
-                $urlCoder,
-                $session,
-                $sidResolver,
-                $urlBuilder
-            );
-        }
-        if ($version < '2.3.3') {
-            parent::__construct(
-                $request,
-                $storeManager,
-                $urlCoder,
-                $session,
-                $sidResolver,
-                $urlBuilder,
-                $canUseSessionIdInParam
-            );
-        }
-        else {
-            parent::__construct(
-                $request,
-                $storeManager,
-                $urlCoder,
-                $session,
-                $sidResolver,
-                $urlBuilder,
-                $uri,
-                $canUseSessionIdInParam
-            );
-        }
-
+    )
+    {
+        parent::__construct(
+            $request,
+            $storeManager,
+            $urlCoder,
+            $session,
+            $sidResolver,
+            $urlBuilder,
+            $uri,
+            $canUseSessionIdInParam
+        );
         $this->storeResolver = $storeResolver;
     }
 
