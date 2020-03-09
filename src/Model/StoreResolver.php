@@ -363,7 +363,13 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         }
         if (count($found) > 1) {
             if ($scope === 'store') {
-                $storeId = current(array_flip($found));
+                // It is possible to find multiple stores when one store url is a substring of another.
+                // In that case we need to return the longest matching store url.
+                // To do this we sort the stores in descending order of url length.
+                uasort($found, function ($a,$b){
+                    return strlen($b)-strlen($a);
+                });
+                return current(array_flip($found));
             } else {
                 // Should never happen (2 websites with the same url) but could be a wrong configuration.
                 // Get the first one.
