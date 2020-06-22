@@ -7,6 +7,9 @@ use Magento\Store\Model\StoreManagerInterface;
 /** @var \Magento\TestFramework\ObjectManager $objectManager */
 $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
+// Override the Uri to prevent errors while running this fixture.
+$httpRequest = $objectManager->get(\Magento\Framework\App\Request\Http::class);
+$httpRequest->setUri('');
 
 $storeManager = $objectManager->get(StoreManagerInterface::class);
 $storeRepository = $objectManager->get(StoreRepositoryInterface::class);
