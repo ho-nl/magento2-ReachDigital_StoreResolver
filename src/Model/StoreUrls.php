@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Ho\StoreResolver\Model;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Store\Model\ScopeInterface;
@@ -17,6 +18,9 @@ use Magento\Store\Model\StoreManagerInterface;
 
 class StoreUrls
 {
+    const XML_PATH_MULTIPLE_CUSTOM_PATH_FLAG = 'web/unsecure/multiple_custom_path_enabled';
+    const XML_PATH_MULTIPLE_CUSTOM_PATH = 'web/unsecure/multiple_custom_path';
+
     /**
      * @var null|string[]
      */
@@ -37,14 +41,21 @@ class StoreUrls
      */
     private $storeFactory;
 
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+
     public function __construct(
         StoreManagerInterface $storeManager,
         StoreFactory $storeFactory,
-        ResourceConnection $resource
+        ResourceConnection $resource,
+        ScopeConfigInterface $scopeConfig
     ) {
         $this->storeManager = $storeManager;
         $this->storeFactory = $storeFactory;
         $this->resource = $resource;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -72,6 +83,13 @@ class StoreUrls
     {
         $pathParts = explode('/', trim($pathInfo, '/'));
         $customPath = reset($pathParts);
+
+        if ($this->scopeConfig->isSetFlag(self::XML_PATH_MULTIPLE_CUSTOM_PATH_FLAG)) {
+            $firstCustomPath = trim($this->scopeConfig->getValue(self::XML_PATH_MULTIPLE_CUSTOM_PATH), '/');
+            if (strpos($pathInfo, '/' . $firstCustomPath . '/') !== false) {
+                $customPath = $pathParts[0] . '/' . $pathParts[1];
+            }
+        }
 
         return $this->getStoreCodeByBaseUrl($host . '/' . $customPath);
     }
@@ -106,7 +124,8 @@ class StoreUrls
         if (is_null($this->baseUrls)) {
             $baseUrls = [];
 
-            $select = $select = $connection->select()
+            $select = $select = $connection
+                ->select()
                 ->from($connection->getTableName('core_config_data'))
                 ->reset(\Zend_Db_Select::COLUMNS)
                 ->columns('value')
@@ -121,7 +140,8 @@ class StoreUrls
                     ->getCollection()
                     ->addWebsiteFilter($website->getId());
 
-                $select = $connection->select()
+                $select = $connection
+                    ->select()
                     ->from($connection->getTableName('core_config_data'))
                     ->reset(\Zend_Db_Select::COLUMNS)
                     ->columns('value')
@@ -132,7 +152,8 @@ class StoreUrls
 
                 foreach ($storeCollection as $store) {
                     /** @var Store $store */
-                    $select = $connection->select()
+                    $select = $connection
+                        ->select()
                         ->from($connection->getTableName('core_config_data'))
                         ->reset(\Zend_Db_Select::COLUMNS)
                         ->columns('value')
@@ -143,7 +164,10 @@ class StoreUrls
                     $storeBaseUrl = $connection->fetchOne($select);
 
                     $baseUrl = $storeBaseUrl ?: $websiteBaseUrl;
-                    $baseUrls[$store->getCode()] = rtrim(str_replace(['www.', 'http://', 'https://'], '', $baseUrl), '/');
+                    $baseUrls[$store->getCode()] = rtrim(
+                        str_replace(['www.', 'http://', 'https://'], '', $baseUrl),
+                        '/'
+                    );
                 }
             }
 

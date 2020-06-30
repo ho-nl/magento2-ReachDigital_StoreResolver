@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright © Reach Digital (https://www.reachdigital.io/)
+  ~ See LICENSE.txt for license details.
+  -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="web">
+            <group id="unsecure">
+                <field id="multiple_custom_path_enabled" translate="label" type="select" sortOrder="50" showInDefault="1">
+                    <label>Multiple Custom Path</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Please note: This can only be set on global level]]></comment>
+                </field>
+                <field id="multiple_custom_path" translate="label" type="text" sortOrder="51" showInDefault="1">
+                    <label>First Custom Path</label>
+                    <comment><![CDATA[
+                        Enter string before the first slash after the TLD here, when setting up a base URL like <em>http://www.example.com/shop/en/</em><br/>
+                        Don't enter slashes, use <em>shop</em> in this example.
+                    ]]></comment>
+                    <validate>required-entry</validate>
+                    <depends>
+                        <field id="multiple_custom_path_enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>
