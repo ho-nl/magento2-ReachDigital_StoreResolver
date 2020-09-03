@@ -115,6 +115,11 @@ class StoreSwitchingTest extends TestCase
 
     private function performTestSwitch($fromStoreBaseUrl, $toStoreBaseUrl, $toUrl)
     {
+        // Override the Uri to prevent errors while running this fixture.
+        $objectManager = Bootstrap::getObjectManager();
+        $httpRequest = $objectManager->get(\Magento\Framework\App\Request\Http::class);
+        $httpRequest->setUri('');
+
         $testStore1 = $this->getStore('test_1');
         $testStore2 = $this->getStore('test_2');
         $config = $this->getConfig();
