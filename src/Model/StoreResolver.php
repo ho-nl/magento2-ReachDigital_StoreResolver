@@ -332,9 +332,9 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $websites = $this->getWebsitesData();
         $scope    = 'store';
         $found    = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
-            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
-            $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
-            return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
+            $storeUrlIdentifier   = str_replace(['www.', 'http://', 'https://'], '', $storeUrl);
+            $currentUrlIdentifier  = parse_url($currentUrl, PHP_URL_HOST) . '/' . explode('/', parse_url($currentUrl, PHP_URL_PATH))[1] . '/';
+            return ($currentUrlIdentifier === $storeUrlIdentifier);
         });
         // see if url is defined at website scope
         if (count($found) === 0) {
