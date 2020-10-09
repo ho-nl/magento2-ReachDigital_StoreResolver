@@ -341,6 +341,15 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             $currentUrlIdentifier  = parse_url($currentUrl, PHP_URL_HOST) . '/' . $storeCode . '/';
             return ($currentUrlIdentifier === $storeUrlIdentifier);
         });
+        // If no storeview found in url / check for storeview in domain
+        if (count($found) === 0) {
+            $found    = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
+                $storeUrlIdentifier   = str_replace(['www.', 'http://', 'https://'], '', $storeUrl);
+                $currentUrlIdentifier  = parse_url($currentUrl, PHP_URL_HOST) . '/';
+                return ($currentUrlIdentifier === $storeUrlIdentifier);
+            });
+        }
+
         // see if url is defined at website scope
         if (count($found) === 0) {
             $scope = 'website';
