@@ -87,16 +87,16 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         WebsiteRepositoryInterface $websiteRepository,
         ResourceConnection $resource
     ) {
-        $this->storeRepository         = $storeRepository;
-        $this->storeCookieManager      = $storeCookieManager;
-        $this->request                 = $request;
-        $this->cache                   = $cache;
-        $this->readerList              = $readerList;
-        $this->runMode                 = \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE;
+        $this->storeRepository = $storeRepository;
+        $this->storeCookieManager = $storeCookieManager;
+        $this->request = $request;
+        $this->cache = $cache;
+        $this->readerList = $readerList;
+        $this->runMode = \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE;
         $this->configCollectionFactory = $configCollectionFactory;
-        $this->urlInterface            = $urlInterface;
-        $this->groupRepository         = $groupRepository;
-        $this->websiteRepository       = $websiteRepository;
+        $this->urlInterface = $urlInterface;
+        $this->groupRepository = $groupRepository;
+        $this->websiteRepository = $websiteRepository;
         $this->resource = $resource;
     }
 
@@ -109,10 +109,10 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         [$stores, $defaultStoreId] = $this->getStoresData();
 
         // get ALL stores with their default store
-        
+
         $storeCode = $this->request->getParam(self::PARAM_NAME, $this->storeCookieManager->getStoreCodeFromCookie());
         if (\is_array($storeCode)) {
-            if (! isset($storeCode['_data']['code'])) {
+            if (!isset($storeCode['_data']['code'])) {
                 throw new \InvalidArgumentException(__('Invalid store parameter.'));
             }
             $storeCode = $storeCode['_data']['code'];
@@ -125,7 +125,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
                 $store = $this->getDefaultStoreById($defaultStoreId);
             }
 
-            if (! \in_array($store->getId(), $stores, false)) {
+            if (!\in_array($store->getId(), $stores, false)) {
                 $store = $this->getDefaultStoreById($defaultStoreId);
             }
         } else {
@@ -146,7 +146,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      */
     private function getStoresData(): array
     {
-        $cacheKey  = 'resolved_stores_' . $this->runMode .'_'. $this->scopeCode;
+        $cacheKey = 'resolved_stores_' . $this->runMode . '_' . $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
         if ($cacheData) {
             $storesData = unserialize($cacheData);
@@ -182,7 +182,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      */
     private function getWebsitesData(): array
     {
-        $cacheKey  = 'resolved_websites_' . $this->runMode .'_'. $this->scopeCode;
+        $cacheKey = 'resolved_websites_' . $this->runMode . '_' . $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
         if ($cacheData) {
             $websitesData = unserialize($cacheData);
@@ -201,7 +201,9 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     {
         $defaultStores = [];
         foreach ($this->websiteRepository->getList() as $website) {
-            $defaultStores[$website->getId()] = $this->groupRepository->get($website->getDefaultGroupId())->getDefaultStoreId();
+            $defaultStores[$website->getId()] = $this->groupRepository
+                ->get($website->getDefaultGroupId())
+                ->getDefaultStoreId();
         }
 
         return $defaultStores;
@@ -216,7 +218,7 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
      */
     public function getAutoResolveData($scope = 'store'): array
     {
-        $cacheKey  = 'auto_resolved_stores_' . $scope . '_' . $this->runMode .'_'. $this->scopeCode;
+        $cacheKey = 'auto_resolved_stores_' . $scope . '_' . $this->runMode . '_' . $this->scopeCode;
         $cacheData = $this->cache->load($cacheKey);
         if ($cacheData) {
             $storesData = unserialize($cacheData);
@@ -241,38 +243,45 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         $configCollection->addFieldToFilter('path', 'web/unsecure/base_url');
         if ($scope === 'store') {
             $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_STORES);
-        } else if ($scope === 'website') {
+        } elseif ($scope === 'website') {
             $configCollection->addFieldToFilter('scope', \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES);
-        } else if ($scope === 'default') {
+        } elseif ($scope === 'default') {
             $configCollection->addFieldToFilter('scope', 'default');
         } else {
-            throw new \InvalidArgumentException('Config scope has to be one of "store", "website" or "default". Provided scope was: ' . $scope);
+            throw new \InvalidArgumentException(
+                'Config scope has to be one of "store", "website" or "default". Provided scope was: ' . $scope
+            );
         }
 
-        $configCollection->getSelect()->reset('columns')->columns(['scope_id', 'value']);
-
+        $configCollection
+            ->getSelect()
+            ->reset('columns')
+            ->columns(['scope_id', 'value']);
         $result = $configCollection->getConnection()->fetchPairs($configCollection->getSelect());
 
-        if ($scope === 'default'
-            && count($result) > 0) {
-
+        if ($scope === 'default' && count($result) > 0) {
             // The url matches the default base url, however, we now need to know which of the stores uses the dafault URL.
             // This is the store that doesn't have a base url set at either store scope or website scope.
             $connection = $this->resource->getConnection();
             $defaultStoreSelect = $connection->select();
-            $defaultStoreSelect->from($connection->getTableName('store'), 'store_id')
-                ->joinLeft(['store_urls' => $connection->getTableName('core_config_data')],
+            $defaultStoreSelect
+                ->from($connection->getTableName('store'), 'store_id')
+                ->joinLeft(
+                    ['store_urls' => $connection->getTableName('core_config_data')],
                     'store_urls.path = "web/unsecure/base_url" AND store_urls.scope = "stores" AND store_urls.scope_id = store_id',
-                    [])
-                ->joinLeft(['website_urls' => $connection->getTableName('core_config_data')],
+                    []
+                )
+                ->joinLeft(
+                    ['website_urls' => $connection->getTableName('core_config_data')],
                     'website_urls.path = "web/unsecure/base_url" AND website_urls.scope = "websites" AND website_urls.scope_id = website_id',
-                    [])
+                    []
+                )
                 ->where('store_urls.value IS NULL')
                 ->where('website_urls.value IS NULL')
                 ->where('store_id > 0');
             $defaultStores = $connection->fetchAll($defaultStoreSelect);
             if (count($defaultStores) === 1) {
-                $result = [(int)reset($defaultStores) => reset($result)];
+                $result = [(int) reset($defaultStores) => reset($result)];
             }
         }
 
@@ -330,18 +339,18 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
     public function getStoreForUrl(string $currentUrl)
     {
         $websites = $this->getWebsitesData();
-        $scope    = 'store';
-        $found    = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
-            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
-            $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
+        $scope = 'store';
+        $found = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
+            $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl));
+            $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl));
             return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
         });
         // see if url is defined at website scope
         if (count($found) === 0) {
             $scope = 'website';
             $found = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
-                $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
-                $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
+                $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl));
+                $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl));
                 return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
             });
         }
@@ -349,8 +358,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
         if (count($found) === 0) {
             $scope = 'default';
             $found = array_filter($this->getAutoResolveData($scope), static function ($storeUrl) use ($currentUrl) {
-                $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl), '/');
-                $storeUrlIdentifier   = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl), '/');
+                $currentUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $currentUrl));
+                $storeUrlIdentifier = rtrim(str_replace(['www.', 'http://', 'https://'], '', $storeUrl));
                 return stripos($currentUrlIdentifier, $storeUrlIdentifier) === 0;
             });
         }
@@ -366,8 +375,8 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
                 // It is possible to find multiple stores when one store url is a substring of another.
                 // In that case we need to return the longest matching store url.
                 // To do this we sort the stores in descending order of url length.
-                uasort($found, function ($a,$b){
-                    return strlen($b)-strlen($a);
+                uasort($found, function ($a, $b) {
+                    return strlen($b) - strlen($a);
                 });
                 return current(array_flip($found));
             } else {
@@ -382,14 +391,13 @@ class StoreResolver implements \Magento\Store\Api\StoreResolverInterface
             return $group->getDefaultStoreId();
         }
         if (count($found) === 0 && parse_url($currentUrl, PHP_URL_PATH) === '/robots.txt') {
-
             // Handle robots.txt special case. For setups where stores have a path component in the base URL, try to map
             // by host only.
             $storeUrls = $this->getAutoResolveData('store');
             asort($storeUrls);
             $found = array_filter($storeUrls, static function ($storeUrl) use ($currentUrl) {
                 return parse_url($storeUrl, PHP_URL_SCHEME) === parse_url($currentUrl, PHP_URL_SCHEME) &&
-                       parse_url($storeUrl, PHP_URL_HOST) === parse_url($currentUrl, PHP_URL_HOST);
+                    parse_url($storeUrl, PHP_URL_HOST) === parse_url($currentUrl, PHP_URL_HOST);
             });
             if (count($found) > 0) {
                 return current(array_flip($found));

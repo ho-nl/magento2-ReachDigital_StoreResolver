@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ho\StoreResolver\Test\Integration\StoreSwitching;
+namespace Ho\StoreResolver\Test\Integration;
 
 use Magento\Config\Model\ResourceModel\Config;
 use Magento\Framework\App\ActionInterface;
@@ -30,9 +30,8 @@ class StoreSwitchingTest extends TestCase
 {
     public static function createStores(): void
     {
-        include __DIR__ . '/../_files/stores.php';
+        include __DIR__ . '/_files/stores.php';
     }
-
 
     /**
      * @test
@@ -134,7 +133,6 @@ class StoreSwitchingTest extends TestCase
         // Clean the cache so the base urls will be found.
         $this->getCacheManager()->clean($this->getCacheManager()->getAvailableTypes());
 
-
         $testStore1->resetConfig();
         $testStore2->resetConfig();
         $storeManager = $this->getStoreManager();
@@ -146,7 +144,6 @@ class StoreSwitchingTest extends TestCase
         $request->setParam('___from_store', 'test_1');
         $request->setParam(StoreManagerInterface::PARAM_NAME, 'test_2');
         $request->setParam(ActionInterface::PARAM_NAME_URL_ENCODED, \base64_encode($toUrl));
-
 
         $redirect = $this->getRedirect();
         $redirect->execute();
@@ -231,7 +228,4 @@ class StoreSwitchingTest extends TestCase
         $objectManager = Bootstrap::getObjectManager();
         return $objectManager->get(Manager::class);
     }
-
-
-
 }
