@@ -22,7 +22,8 @@ class FixSeoUrlParsing
         'amasty_xsearch/',
         'customer/',
         'checkout/',
-        'catalogsearch'
+        'catalogsearch',
+        'channable/feed'
     ];
 
     /** @var UrlFinderInterface $urlFinder */
