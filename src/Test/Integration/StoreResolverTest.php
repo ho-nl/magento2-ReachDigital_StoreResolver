@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Ho\StoreResolver\Test\Integration;
 
-use Magento\TestFramework\Helper\CacheCleaner;
-
 class StoreResolverTest extends \PHPUnit\Framework\TestCase
 {
     /** @var \Magento\Config\Model\ResourceModel\Config $config */
@@ -23,9 +21,8 @@ class StoreResolverTest extends \PHPUnit\Framework\TestCase
     /**
      * @inheritDoc
      */
-    protected function setUp()
+    protected function setUp(): void
     {
-        parent::setUp();
         $objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
 
         $this->config = $objectManager->get(\Magento\Config\Model\ResourceModel\Config::class);
@@ -44,12 +41,13 @@ class StoreResolverTest extends \PHPUnit\Framework\TestCase
      */
     public function testUriContainsStoreCode()
     {
-        $this->config->saveConfig('web/unsecure/base_url', 'http://localhost:81/', 'stores', 1)
+        $this->config
+            ->saveConfig('web/unsecure/base_url', 'http://localhost:81/', 'stores', 1)
             ->saveConfig('web/unsecure/base_url', 'http://localhost:81/es/', 'stores', 2);
 
         $this->cacheManager->clean($this->cacheManager->getAvailableTypes());
         $this->request->setRequestUri('/estimatetimeshipping/estimation/quoteDate');
 
-        $this->assertSame(1, (int) $this->storeResolver->getCurrentStoreId());
+        self::assertSame(1, (int) $this->storeResolver->getCurrentStoreId());
     }
 }

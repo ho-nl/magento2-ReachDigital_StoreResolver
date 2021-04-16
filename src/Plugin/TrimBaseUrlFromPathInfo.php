@@ -1,9 +1,9 @@
 <?php
-declare(strict_types=1);
 /**
  * Copyright © Reach Digital (https://www.reachdigital.io/)
  * See LICENSE.txt for license details.
  */
+declare(strict_types=1);
 
 namespace Ho\StoreResolver\Plugin;
 
@@ -41,13 +41,13 @@ class TrimBaseUrlFromPathInfo
         string $resultPathInfo,
         \Magento\Framework\App\RequestInterface $request,
         $pathInfo
-    ) : string {
+    ): string {
         if (!$request instanceof Http) {
             return $resultPathInfo;
         }
 
         $storeCode = false;
-        if ($request->getUri()->getHost() && $request->getUri()->getHost() != '') {
+        if ($request->getUriString() && $request->getUri()->getHost() !== '') {
             $storeCode = $this->storeUrls->getStoreCodeByHostAndPath($request->getUri()->getHost(), $resultPathInfo);
         }
 
