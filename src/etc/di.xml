@@ -8,9 +8,6 @@
     <preference for="Magento\Store\Api\StoreResolverInterface" type="Ho\StoreResolver\Model\StoreResolver"/>
     <preference for="Magento\Framework\App\Response\RedirectInterface" type="Ho\StoreResolver\Model\AppResponseRedirect" />
 
-    <type name="Magento\Framework\App\AreaList">
-        <plugin name="hoStoreResolverAreaList" type="Ho\StoreResolver\Plugin\AppAreaListPlugin"/>
-    </type>
     <type name="Magento\Framework\Data\Helper\PostHelper">
         <plugin name="reach" type="Ho\StoreResolver\Plugin\PostHelperPlugin"/>
     </type>
@@ -18,14 +15,13 @@
     <type name="Magento\Store\App\Request\PathInfoProcessor">
         <plugin name="reachDigitalTrimBaseUrlFromPathInfo" type="Ho\StoreResolver\Plugin\TrimBaseUrlFromPathInfo"/>
     </type>
+    <type name="Amasty\ShopbySeo\Helper\Data">
+        <plugin name="hoStoreResolverAmastyShopbySeoCompatibility" type="Ho\StoreResolver\Plugin\FixSeoUrlParsing"/>
+    </type>
 
     <type name="Ho\StoreResolver\Model\StoreResolver">
         <arguments>
             <argument name="cache" xsi:type="object">Magento\Framework\App\Cache\Type\Config</argument>
         </arguments>
-    </type>
-
-    <type name="Amasty\ShopbySeo\Helper\Data">
-        <plugin name="hoStoreResolverAmastyShopbySeoCompatibility" type="Ho\StoreResolver\Plugin\FixSeoUrlParsing"/>
     </type>
 </config>
