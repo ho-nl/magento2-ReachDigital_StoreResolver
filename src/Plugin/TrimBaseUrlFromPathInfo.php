@@ -47,7 +47,7 @@ class TrimBaseUrlFromPathInfo
         }
 
         $storeCode = false;
-        if ($request->getUriString() && $request->getUri()->getHost() !== '') {
+        if ($request->getUriString() && !empty($request->getUri()->getHost())) {
             $storeCode = $this->storeUrls->getStoreCodeByHostAndPath($request->getUri()->getHost(), $resultPathInfo);
         }
 
