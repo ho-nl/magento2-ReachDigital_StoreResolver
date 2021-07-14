@@ -28,22 +28,25 @@ class ModelStoreSwitcherRewriteUrl
         StoreInterface $targetStore,
         string $redirectUrl
     ): string {
+        $requestUrl = $redirectUrl;
+
         // Remove store code in redirect url for correct rewrite search
         $redirectUrl = $this->stripBaseUrlEnd($targetStore->getBaseUrl(), $redirectUrl);
         $redirectUrl = $this->stripBaseUrlEnd($fromStore->getBaseUrl(), $redirectUrl);
         $toUrlWithoutEnd = $this->stripBaseUrlEnd($targetStore->getBaseUrl(), $targetStore->getBaseUrl());
-        // The ending of the targetUrl was previously stripped, but is needed for correct handling.
-        // Add it back in.
-        $redirectUrl = \str_replace($toUrlWithoutEnd, $targetStore->getBaseUrl(), $redirectUrl);
 
         $targetUrl = $proceed($fromStore, $targetStore, $redirectUrl);
 
-        return $targetUrl === $this->stripBaseUrlEnd($targetStore->getBaseUrl(), $targetStore->getBaseUrl())
-            ? $targetStore->getBaseUrl()
-            : $targetUrl;
+        return $redirectUrl === $targetUrl ? $requestUrl : $targetUrl;
     }
 
-    private function stripBaseUrlEnd($baseUrl, $urlToStrip)
+    /**
+     * @param string $baseUrl
+     * @param string $urlToStrip
+     *
+     * @return string
+     */
+    private function stripBaseUrlEnd(string $baseUrl, string $urlToStrip): string
     {
         $strippedBaseUrl = rtrim(str_replace(['www.', 'http://', 'https://'], '', $baseUrl), '/');
         if (substr_count($strippedBaseUrl, '/') > 0) {
@@ -51,6 +54,7 @@ class ModelStoreSwitcherRewriteUrl
             $baseUrlStart = str_replace($urlEnd, '', $baseUrl);
             $urlToStrip = str_replace($baseUrl, $baseUrlStart, $urlToStrip);
         }
+
         return $urlToStrip;
     }
 }
