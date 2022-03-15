@@ -20,11 +20,11 @@ With the new implementation for the `StoreResolverInterface` the domains automat
 Store code will be removed from URL if added in the Base URL.
 Make sure to explicitly set `Base URL for Static View Files` and `Base URL for User Media Files` without the store code
 
-| Configuration                   | Value                       |
-| ------------------------------- | --------------------------- |
-| Base URL                        | https://paracord.eu/de/     |
-| Base URL for Static View Files  | https://paracord.eu/static/ |
-| Base URL for User Media Files   | https://paracord.eu/media/  |
+| Configuration                   | Value                           |
+| ------------------------------- | ------------------------------- |
+| Base URL                        | https://www.website.com/de/     |
+| Base URL for Static View Files  | https://www.website.com/static/ |
+| Base URL for User Media Files   | https://www.website.com/media/  |
 
 > It's not possible to have CMS pages with the same identifier as a store code!
 
