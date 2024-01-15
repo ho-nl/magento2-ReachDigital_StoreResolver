@@ -61,9 +61,11 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
         // Determine if URL is within current store
         if ($url !== null && strpos($url, 'http') !== false) {
             $urlStoreId = $this->storeResolver->getStoreForUrl($url);
-            $curStoreId = (int) $this->_storeManager->getStore()->getId();
+            if ($urlStoreId !== false) {
+                $curStoreId = (int) $this->_storeManager->getStore()->getId();
 
-            return $urlStoreId === $curStoreId;
+                return (int) $urlStoreId === $curStoreId;
+            }
         }
 
         return false;
