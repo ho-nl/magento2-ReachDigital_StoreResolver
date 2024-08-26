@@ -22,7 +22,7 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
      * @param \Magento\Framework\Session\SidResolverInterface    $sidResolver
      * @param \Magento\Framework\UrlInterface                    $urlBuilder
      * @param StoreResolver                                      $storeResolver
-     * @param \Zend\Uri\Uri|null                                 $uri
+     * @param \Laminas\Uri\Uri|null                                 $uri
      * @param bool                                               $canUseSessionIdInParam
      */
     public function __construct(
@@ -33,7 +33,7 @@ class AppResponseRedirect extends \Magento\Store\App\Response\Redirect
         \Magento\Framework\Session\SidResolverInterface $sidResolver,
         \Magento\Framework\UrlInterface $urlBuilder,
         \Ho\StoreResolver\Model\StoreResolver $storeResolver,
-        \Zend\Uri\Uri $uri = null,
+        \Laminas\Uri\Uri $uri = null,
         $canUseSessionIdInParam = true
     )
     {
